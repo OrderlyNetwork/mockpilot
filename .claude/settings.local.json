@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run compile-web:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run run-in-browser:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

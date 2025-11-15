@@ -1,0 +1,33 @@
+name: Get User Info
+description: 获取用户基本信息
+method: GET
+endpoint: /api/user
+rules:
+  - name: 正常返回
+    status: 200
+    headers:
+      Content-Type: application/json
+    body:
+      id: 1
+      name: Leo
+      email: "leo@example.com"
+      avatar: "https://example.com/avatar.jpg"
+    delay: 0
+
+  - name: Token 过期
+    status: 401
+    headers:
+      Content-Type: application/json
+    body:
+      error: "Token expired"
+      code: 401
+    delay: 300
+
+  - name: 用户不存在
+    status: 404
+    headers:
+      Content-Type: application/json
+    body:
+      error: "User not found"
+      code: 404
+    delay: 100

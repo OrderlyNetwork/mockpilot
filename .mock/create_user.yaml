@@ -1,0 +1,35 @@
+name: Create User
+description: 创建新用户
+method: POST
+endpoint: /api/user
+rules:
+  - name: 创建成功
+    status: 201
+    headers:
+      Content-Type: application/json
+    body:
+      id: 2
+      name: "New User"
+      email: "newuser@example.com"
+      created_at: "2023-12-07T10:30:00Z"
+    delay: 500
+
+  - name: 邮箱已存在
+    status: 400
+    headers:
+      Content-Type: application/json
+    body:
+      error: "Email already exists"
+      code: 400
+    delay: 100
+
+  - name: 参数验证失败
+    status: 422
+    headers:
+      Content-Type: application/json
+    body:
+      error: "Validation failed"
+      details:
+        - field: "email"
+          message: "Invalid email format"
+    delay: 50

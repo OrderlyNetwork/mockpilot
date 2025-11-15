@@ -1,0 +1,119 @@
+{
+  "name": "mock-server",
+  "displayName": "Mock Server",
+  "description": "Visual Mock API Server for VS Code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.106.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "browser": "./dist/web/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mock-server",
+          "title": "Mock Server",
+          "icon": "$(server)"
+        }
+      ]
+    },
+    "views": {
+      "mock-server": [
+        {
+          "id": "mockExplorer",
+          "name": "Mock APIs"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mock-server.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "mock-server.refreshExplorer",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "mock-server.createMockApi",
+        "title": "Create Mock API",
+        "icon": "$(add)"
+      },
+      {
+        "command": "mock-server.createMockDirectory",
+        "title": "Create .mock Directory"
+      },
+      {
+        "command": "mock-server.openMockApi",
+        "title": "Open Mock API"
+      },
+      {
+        "command": "mock-server.deleteMockApi",
+        "title": "Delete Mock API",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mock-server.refreshExplorer",
+          "when": "view == mockExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "mock-server.createMockApi",
+          "when": "view == mockExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "mock-server.openMockApi",
+          "when": "view == mockExplorer && viewItem == mockFile",
+          "group": "inline"
+        },
+        {
+          "command": "mock-server.deleteMockApi",
+          "when": "view == mockExplorer && viewItem == mockFile",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
+    "pretest": "pnpm run compile-web",
+    "vscode:prepublish": "pnpm run package-web",
+    "compile-web": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch-web": "npm-run-all -p watch-web:*",
+    "watch-web:esbuild": "node esbuild.js --watch",
+    "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package-web": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.106.0",
+    "@types/mocha": "^10.0.10",
+    "@types/assert": "^1.5.11",
+    "eslint": "^9.25.1",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "mocha": "^11.1.0",
+    "typescript": "^5.8.3",
+    "@vscode/test-web": "^0.0.69",
+    "esbuild": "^0.25.3",
+    "glob": "^11.0.2",
+    "npm-run-all": "^4.1.5",
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "assert": "^2.1.0"
+  }
+}
