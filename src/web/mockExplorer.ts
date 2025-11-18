@@ -192,6 +192,9 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
   }
 
   private parseYamlContent(yamlText: string, filename: string): MockApiConfig {
+    console.log('🔍 [DEBUG] MockExplorer.parseYamlContent called for:', filename);
+    console.log('🔍 [DEBUG] YAML content:', yamlText);
+
     // Basic YAML parser - in a real implementation, you'd use a proper YAML library
     // For now, we'll do simple text parsing to extract the required fields
     const lines = yamlText.split('\n');
@@ -201,43 +204,128 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
 
     let currentRule: any = {};
     let inRules = false;
+    let inHeaders = false;
+    let bodyStart = false;
+    let bodyLines: string[] = [];
+    let currentIndent = 0;
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const trimmed = line.trim();
+      const indent = line.length - line.trimStart().length;
+
       if (!trimmed || trimmed.startsWith('#')) {continue;}
 
-      if (trimmed.startsWith('name:')) {
-        config.name = trimmed.substring(5).trim().replace(/['"]/g, '');
-      } else if (trimmed.startsWith('description:')) {
-        config.description = trimmed.substring(13).trim().replace(/['"]/g, '');
-      } else if (trimmed.startsWith('method:')) {
-        config.method = trimmed.substring(7).trim() as any;
-      } else if (trimmed.startsWith('endpoint:')) {
-        config.endpoint = trimmed.substring(10).trim().replace(/['"]/g, '');
-      } else if (trimmed.startsWith('rules:')) {
-        inRules = true;
-      } else if (inRules && trimmed.startsWith('- name:')) {
-        if (currentRule.name) {
-          config.rules!.push({ ...currentRule });
+      // Parse top-level fields
+      if (indent === 0 || indent === 2) {
+        if (trimmed.startsWith('name:')) {
+          config.name = trimmed.substring(5).trim().replace(/['"]/g, '');
+        } else if (trimmed.startsWith('description:')) {
+          config.description = trimmed.substring(13).trim().replace(/['"]/g, '');
+        } else if (trimmed.startsWith('method:')) {
+          config.method = trimmed.substring(7).trim() as any;
+        } else if (trimmed.startsWith('endpoint:')) {
+          config.endpoint = trimmed.substring(10).trim().replace(/['"]/g, '');
+        } else if (trimmed.startsWith('rules:')) {
+          console.log('🔍 [DEBUG] MockExplorer: Found rules section');
+          inRules = true;
+          currentIndent = indent;
         }
-        currentRule = { name: trimmed.substring(7).trim().replace(/['"]/g, '') };
-      } else if (inRules && trimmed.startsWith('status:')) {
-        currentRule.status = parseInt(trimmed.substring(7).trim());
-      } else if (inRules && trimmed.startsWith('delay:')) {
-        currentRule.delay = parseInt(trimmed.substring(6).trim());
-      } else if (inRules && trimmed.startsWith('headers:')) {
-        currentRule.headers = {};
-      } else if (inRules && trimmed.includes(':') && !trimmed.startsWith('  -')) {
-        const [key, ...valueParts] = trimmed.split(':');
-        const value = valueParts.join(':').trim();
-        if (currentRule.headers !== undefined && (key === 'Content-Type' || key.includes('-'))) {
+      }
+
+      // Parse rules (indent 4+)
+      else if (inRules && indent >= 4) {
+        if (trimmed.startsWith('- name:')) {
+          console.log('🔍 [DEBUG] MockExplorer: Found rule:', trimmed.substring(7).trim());
+          // Save previous rule if exists
+          if (currentRule.name) {
+            if (bodyLines.length > 0) {
+              const bodyContent = bodyLines.join('\n');
+              try {
+                currentRule.body = JSON.parse(bodyContent);
+              } catch (e) {
+                // If JSON parsing fails, try to fix common YAML formatting issues
+                const fixedContent = bodyContent
+                  .replace(/"/g, '"')  // Fix quote escaping
+                  .replace(/'/g, "'");  // Fix single quotes
+                try {
+                  currentRule.body = JSON.parse(fixedContent);
+                } catch (e2) {
+                  // If still fails, store as raw string
+                  currentRule.body = { raw: bodyContent };
+                }
+              }
+              bodyLines = [];
+            }
+            config.rules!.push({ ...currentRule });
+          }
+          currentRule = { name: trimmed.substring(7).trim().replace(/['"]/g, '') };
+          inHeaders = false;
+          bodyStart = false;
+        } else if (indent === 6 && trimmed.startsWith('status:')) {
+          currentRule.status = parseInt(trimmed.substring(7).trim());
+        } else if (indent === 6 && trimmed.startsWith('delay:')) {
+          currentRule.delay = parseInt(trimmed.substring(6).trim());
+        } else if (indent === 6 && trimmed.startsWith('headers:')) {
+          currentRule.headers = {};
+          inHeaders = true;
+          bodyStart = false;
+        } else if (inHeaders && indent === 8 && trimmed.includes(':')) {
+          const [key, ...valueParts] = trimmed.split(':');
+          const value = valueParts.join(':').trim();
           currentRule.headers[key.trim()] = value.replace(/['"]/g, '');
+        } else if (indent === 6 && (trimmed.startsWith('body:') || trimmed.startsWith('body: |'))) {
+          console.log('🔍 [DEBUG] MockExplorer: Found body field');
+          inHeaders = false;
+          bodyStart = true;
+          // Handle both single-line and multi-line body formats
+          if (trimmed.startsWith('body: |')) {
+            // Multi-line format, start collecting body lines
+            const bodyContent = trimmed.substring(8).trim();
+            if (bodyContent) {
+              bodyLines.push(bodyContent);
+            }
+          } else {
+            // Single-line format
+            const bodyContent = trimmed.substring(5).trim();
+            if (bodyContent) {
+              try {
+                currentRule.body = JSON.parse(bodyContent);
+              } catch (e) {
+                bodyLines.push(bodyContent);
+              }
+            }
+          }
+        } else if (bodyStart && indent >= 8) {
+          // For multi-line YAML content, include lines with proper indentation
+          if (trimmed) {
+            bodyLines.push(trimmed);
+          } else {
+            bodyLines.push(line.substring(indent)); // Remove indentation but preserve structure
+          }
         }
       }
     }
 
     // Add the last rule if exists
     if (currentRule.name) {
+      if (bodyLines.length > 0) {
+        const bodyContent = bodyLines.join('\n');
+        try {
+          currentRule.body = JSON.parse(bodyContent);
+        } catch (e) {
+          // If JSON parsing fails, try to fix common YAML formatting issues
+          const fixedContent = bodyContent
+            .replace(/"/g, '"')  // Fix quote escaping
+            .replace(/'/g, "'");  // Fix single quotes
+          try {
+            currentRule.body = JSON.parse(fixedContent);
+          } catch (e2) {
+            // If still fails, store as raw string
+            currentRule.body = { raw: bodyContent };
+          }
+        }
+      }
       config.rules!.push({ ...currentRule });
     }
 
@@ -264,6 +352,9 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
       body: rule.body || {},
       delay: rule.delay || 0
     }));
+
+    console.log('🔍 [DEBUG] MockExplorer: Final parsed config:', JSON.stringify(config, null, 2));
+    console.log('🔍 [DEBUG] MockExplorer: Rules count:', config.rules?.length || 0);
 
     return config as MockApiConfig;
   }

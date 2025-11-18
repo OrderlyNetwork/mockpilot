@@ -3,7 +3,12 @@
     "allow": [
       "Bash(pnpm run compile-web:*)",
       "Bash(pnpm run lint:*)",
-      "Bash(pnpm run run-in-browser:*)"
+      "Bash(pnpm run run-in-browser:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run check-types:*)",
+      "Bash(pnpm run build-web:*)",
+      "Bash(pnpm run dev:*)",
+      "Bash(pnpm run serve:*)"
     ],
     "deny": [],
     "ask": []
