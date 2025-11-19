@@ -11,10 +11,18 @@ export class MockEditorProvider {
     private readonly _context: vscode.ExtensionContext
   ) {}
 
-  public async openEditor(config: MockApiConfig, filePath: string) {
+  public async openEditor(
+    config: MockApiConfig,
+    filePath: string,
+    isNewFile: boolean = false
+  ) {
+    const panelTitle = isNewFile
+      ? `Create Mock API: ${config.name}`
+      : `Edit Mock API: ${config.name}`;
+
     const panel = vscode.window.createWebviewPanel(
       MockEditorProvider.viewType,
-      `Edit Mock API: ${config.name}`,
+      panelTitle,
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -32,10 +40,11 @@ export class MockEditorProvider {
           type: "loadConfig",
           config,
           filePath,
+          isNewFile,
         });
         return;
       }
-      this._handleWebviewMessage(message, panel, filePath);
+      this._handleWebviewMessage(message, panel, filePath, isNewFile);
     });
 
     return panel;
@@ -98,12 +107,13 @@ export class MockEditorProvider {
   private _handleWebviewMessage(
     message: any,
     panel: vscode.WebviewPanel,
-    filePath: string
+    filePath: string,
+    isNewFile: boolean = false
   ) {
     console.log(`[mockEditorProvider] Received message:`, message.type);
     switch (message.type) {
       case "saveConfig":
-        this._saveConfig(message.config, filePath);
+        this._saveConfig(message.config, filePath, isNewFile, panel);
         break;
       case "showError":
         vscode.window.showErrorMessage(message.message);
@@ -265,7 +275,12 @@ endpoint: ${config.endpoint}`;
     }
   }
 
-  private async _saveConfig(config: MockApiConfig, filePath: string) {
+  private async _saveConfig(
+    config: MockApiConfig,
+    filePath: string,
+    isNewFile: boolean = false,
+    panel?: vscode.WebviewPanel
+  ) {
     console.log(
       `[_saveConfig] Saving config with activeRuleIndex: ${config.activeRuleIndex}`
     );
@@ -283,8 +298,9 @@ endpoint: ${config.endpoint}`;
 
       console.log(`[_saveConfig] File saved successfully: ${filePath}`);
 
+      const action = isNewFile ? "created" : "saved";
       vscode.window.showInformationMessage(
-        `Mock API "${config.name}" saved successfully! ActiveRuleIndex: ${
+        `Mock API "${config.name}" ${action} successfully! ActiveRuleIndex: ${
           config.activeRuleIndex ?? 0
         }`
       );
@@ -294,6 +310,11 @@ endpoint: ${config.endpoint}`;
 
       // Reload server to pick up the changes
       vscode.commands.executeCommand("mock-server.reloadServer");
+
+      // Close the panel after successful save for new files
+      if (isNewFile && panel) {
+        panel.dispose();
+      }
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to save mock API: ${error}`);
     }

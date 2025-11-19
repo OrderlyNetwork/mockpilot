@@ -5,7 +5,6 @@ import { MockApiConfig } from "../types";
 import { postMessageToExtension } from "../utils/vscode";
 import { ApiHeader } from "./ApiHeader";
 import { ApiInfoSection } from "./ApiInfoSection";
-import { YamlPreview } from "./YamlPreview";
 import { RuleItem, type Rule } from "./RuleItem";
 
 interface ApiConfig {
@@ -284,8 +283,44 @@ export function MockApiPanel({
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Rules Section - Left */}
+        <div className="flex flex-1 flex-col overflow-hidden border-r border-border">
+          <div className="bg-card px-4 py-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Response Rules</h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addRule}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Rule
+              </Button>
+            </div>
+          </div>
+
+          {/* Rules List */}
+          <div className="flex-1 overflow-auto">
+            <div className="divide-y divide-border">
+              {config.rules.map((rule) => (
+                <RuleItem
+                  key={rule.id}
+                  rule={rule}
+                  isOnlyRule={config.rules.length === 1}
+                  isNewlyCreated={rule.id === newlyCreatedRuleId}
+                  onSetActive={setActiveRule}
+                  onUpdate={updateRule}
+                  onDelete={deleteRule}
+                  onEditComplete={handleRuleEditComplete}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* API Info Section - Right */}
+        <div className="w-[400px] overflow-auto">
           <ApiInfoSection
             name={config.name}
             description={config.description}
@@ -298,45 +333,7 @@ export function MockApiPanel({
               setConfig({ ...config, responseType })
             }
           />
-
-          {/* Rules Section */}
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="border-b border-border bg-card px-4 py-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Response Rules</h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={addRule}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Rule
-                </Button>
-              </div>
-            </div>
-
-            {/* Rules List */}
-            <div className="flex-1 overflow-auto">
-              <div className="divide-y divide-border">
-                {config.rules.map((rule) => (
-                  <RuleItem
-                    key={rule.id}
-                    rule={rule}
-                    isOnlyRule={config.rules.length === 1}
-                    isNewlyCreated={rule.id === newlyCreatedRuleId}
-                    onSetActive={setActiveRule}
-                    onUpdate={updateRule}
-                    onDelete={deleteRule}
-                    onEditComplete={handleRuleEditComplete}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
-
-        <YamlPreview config={config} />
       </div>
     </div>
   );

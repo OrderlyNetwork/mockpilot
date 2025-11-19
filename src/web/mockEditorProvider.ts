@@ -11,10 +11,18 @@ export class MockEditorProvider {
     private readonly _context: vscode.ExtensionContext
   ) {}
 
-  public async openEditor(config: MockApiConfig, filePath: string) {
+  public async openEditor(
+    config: MockApiConfig,
+    filePath: string,
+    isNewFile: boolean = false
+  ) {
+    const panelTitle = isNewFile
+      ? `Create Mock API: ${config.name}`
+      : `Edit Mock API: ${config.name}`;
+
     const panel = vscode.window.createWebviewPanel(
       MockEditorProvider.viewType,
-      `Edit Mock API: ${config.name}`,
+      panelTitle,
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -32,10 +40,11 @@ export class MockEditorProvider {
           type: "loadConfig",
           config,
           filePath,
+          isNewFile,
         });
         return;
       }
-      this._handleWebviewMessage(message, panel, filePath);
+      this._handleWebviewMessage(message, panel, filePath, isNewFile);
     });
 
     return panel;
@@ -98,11 +107,12 @@ export class MockEditorProvider {
   private _handleWebviewMessage(
     message: any,
     panel: vscode.WebviewPanel,
-    filePath: string
+    filePath: string,
+    isNewFile: boolean = false
   ) {
     switch (message.type) {
       case "saveConfig":
-        this._saveConfig(message.config, filePath);
+        this._saveConfig(message.config, filePath, isNewFile, panel);
         break;
       case "showError":
         vscode.window.showErrorMessage(message.message);
@@ -136,7 +146,12 @@ export class MockEditorProvider {
     }
   }
 
-  private async _saveConfig(config: MockApiConfig, filePath: string) {
+  private async _saveConfig(
+    config: MockApiConfig,
+    filePath: string,
+    isNewFile: boolean = false,
+    panel?: vscode.WebviewPanel
+  ) {
     try {
       // Generate YAML content
       const yamlContent = this._generateYamlContent(config);
@@ -148,12 +163,18 @@ export class MockEditorProvider {
         new TextEncoder().encode(yamlContent)
       );
 
+      const action = isNewFile ? "created" : "saved";
       vscode.window.showInformationMessage(
-        `Mock API "${config.name}" saved successfully!`
+        `Mock API "${config.name}" ${action} successfully!`
       );
 
       // Refresh the explorer
       vscode.commands.executeCommand("mock-server.refreshExplorer");
+
+      // Close the panel after successful save for new files
+      if (isNewFile && panel) {
+        panel.dispose();
+      }
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to save mock API: ${error}`);
     }

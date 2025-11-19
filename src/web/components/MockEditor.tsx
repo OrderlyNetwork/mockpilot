@@ -472,7 +472,7 @@ rules:`;
 
           <div className="pt-1">
             <h3 className="text-base font-medium mb-3 text-(--vscode-foreground)">
-              Response Rules
+              Mock Rules
             </h3>
             <div className="max-h-96 overflow-y-auto pr-1">
               {config.rules.map((rule, index) => renderRule(rule, index))}

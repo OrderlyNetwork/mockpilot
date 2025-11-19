@@ -5,6 +5,7 @@ import { IServerManager } from "../common/IServerManager";
 import { StatusBarService } from "./statusBarService";
 import { LogOutputService } from "./logOutputService";
 import { parseYamlConfig } from "../utils/yamlParser";
+import { MockApiConfig } from "../types";
 
 /**
  * Service for registering and handling all extension commands
@@ -27,11 +28,10 @@ export class CommandService {
       this.mockExplorerProvider.refresh();
     });
 
-    this.registerCommand("mock-server.createMockApi", () => {
-      vscode.window.showInformationMessage(
-        "Create Mock API functionality will be implemented soon!"
-      );
-    });
+    this.registerCommand(
+      "mock-server.createMockApi",
+      this.createMockApi.bind(this)
+    );
 
     this.registerCommand(
       "mock-server.createMockDirectory",
@@ -149,6 +149,94 @@ rules:
       vscode.window.showErrorMessage(
         `Failed to create .mock directory: ${error}`
       );
+    }
+  }
+
+  /**
+   * Create a new mock API with empty state
+   */
+  private async createMockApi(): Promise<void> {
+    try {
+      // Prompt user for the new file name
+      const fileName = await vscode.window.showInputBox({
+        prompt: "Enter the name for the new mock API file",
+        placeHolder: "my-api.yaml",
+        validateInput: (value) => {
+          if (!value) {
+            return "File name cannot be empty";
+          }
+          if (!value.endsWith(".yaml") && !value.endsWith(".yml")) {
+            return "File name must end with .yaml or .yml";
+          }
+          return null;
+        },
+      });
+
+      if (!fileName) {
+        return; // User cancelled
+      }
+
+      // Get workspace folder
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showErrorMessage("No workspace folder found");
+        return;
+      }
+
+      // Ensure .mock directory exists
+      const mockDirUri = vscode.Uri.joinPath(workspaceFolders[0].uri, ".mock");
+      try {
+        await vscode.workspace.fs.stat(mockDirUri);
+      } catch {
+        // Directory doesn't exist, create it
+        await vscode.workspace.fs.createDirectory(mockDirUri);
+      }
+
+      // Create the file path for the new file
+      const newFileUri = vscode.Uri.joinPath(mockDirUri, fileName);
+
+      // Check if file already exists
+      try {
+        await vscode.workspace.fs.stat(newFileUri);
+        const overwrite = await vscode.window.showWarningMessage(
+          `File "${fileName}" already exists. Do you want to overwrite it?`,
+          "Yes",
+          "No"
+        );
+        if (overwrite !== "Yes") {
+          return;
+        }
+      } catch {
+        // File doesn't exist, which is fine
+      }
+
+      // Create empty config
+      const emptyConfig: MockApiConfig = {
+        name: fileName.replace(/\.(yaml|yml)$/, ""),
+        description: "",
+        responseType: "",
+        method: "GET",
+        endpoint: "/api/example",
+        rules: [
+          {
+            name: "Success",
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+            body: { message: "Success" },
+            delay: 0,
+          },
+        ],
+      };
+
+      // Open the editor with empty config and the new file path
+      await this.mockEditorProvider.openEditor(
+        emptyConfig,
+        newFileUri.toString(),
+        true // isNewFile flag
+      );
+    } catch (error) {
+      console.error("Error creating mock API:", error);
+      vscode.window.showErrorMessage(`Failed to create mock API: ${error}`);
     }
   }
 
