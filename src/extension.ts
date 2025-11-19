@@ -1,19 +1,19 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { MockExplorerProvider } from "./mockExplorer";
-import { MockEditorProvider } from "./mockEditorProvider";
-import { StatusBarService } from "./services/statusBarService";
-import { ServerManagerService } from "./services/serverManagerService";
-import { CommandService } from "./services/commandService";
-import { FileWatcherService } from "./services/fileWatcherService";
+import { MockExplorerProvider } from "./web/mockExplorer";
+import { MockEditorProvider } from "./web/mockEditorProvider";
+import { StatusBarService } from "./web/services/statusBarService";
+import { ServerManagerService } from "./desktop/services/serverManagerService";
+import { CommandService } from "./web/services/commandService";
+import { FileWatcherService } from "./web/services/fileWatcherService";
 
-// This method is called when your extension is activated
+// This method is called when your extension is activated (Desktop version)
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log("Mock Server extension is now active!");
+  console.log("Mock Server extension is now active! (Desktop Version)");
   console.log("Extension context:", context.extensionUri);
   console.log(
     "Workspace folders:",
@@ -64,7 +64,17 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Add tree view and mock editor provider to disposables
   context.subscriptions.push(treeView, mockEditorProvider);
+
+  // Check if auto-start is enabled
+  const config = vscode.workspace.getConfiguration("mockServer");
+  const autoStart = config.get<boolean>("autoStart", false);
+
+  if (autoStart) {
+    vscode.commands.executeCommand("mock-server.startServer");
+  }
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  console.log("Mock Server extension is being deactivated");
+}

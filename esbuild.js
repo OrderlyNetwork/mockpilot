@@ -58,7 +58,25 @@ const testBundlePlugin = {
 };
 
 async function main() {
-	const ctx = await esbuild.context({
+	// Desktop extension build
+	const desktopCtx = await esbuild.context({
+		entryPoints: ['src/extension.ts'],
+		bundle: true,
+		format: 'cjs',
+		minify: production,
+		sourcemap: !production,
+		sourcesContent: false,
+		platform: 'node',
+		outdir: 'dist',
+		external: ['vscode'],
+		logLevel: 'silent',
+		plugins: [
+			esbuildProblemMatcherPlugin,
+		],
+	});
+
+	// Web extension build
+	const webCtx = await esbuild.context({
 		entryPoints: [
 			'src/web/extension.ts',
 			'src/web/test/suite/extensionTests.ts'
@@ -70,7 +88,24 @@ async function main() {
 		sourcesContent: false,
 		platform: 'browser',
 		outdir: 'dist/web',
-		external: ['vscode'],
+		external: [
+			'vscode',
+			'koa',
+			'@koa/router',
+			'@koa/cors',
+			'koa-bodyparser',
+			'http',
+			'https',
+			'net',
+			'tls',
+			'crypto',
+			'stream',
+			'zlib',
+			'fs',
+			'path',
+			'url',
+			'events'
+		],
 		logLevel: 'silent',
 		// Node.js global to browser globalThis
 		define: {
@@ -86,11 +121,21 @@ async function main() {
 			esbuildProblemMatcherPlugin, /* add to the end of plugins array */
 		],
 	});
+
 	if (watch) {
-		await ctx.watch();
+		await Promise.all([
+			desktopCtx.watch(),
+			webCtx.watch()
+		]);
 	} else {
-		await ctx.rebuild();
-		await ctx.dispose();
+		await Promise.all([
+			desktopCtx.rebuild(),
+			webCtx.rebuild()
+		]);
+		await Promise.all([
+			desktopCtx.dispose(),
+			webCtx.dispose()
+		]);
 	}
 }
 

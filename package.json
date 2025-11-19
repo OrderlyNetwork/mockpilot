@@ -12,6 +12,7 @@
   "activationEvents": [
     "*"
   ],
+  "main": "./dist/extension.js",
   "browser": "./dist/web/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -153,12 +154,15 @@
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
     "pretest": "pnpm run compile-web",
-    "vscode:prepublish": "pnpm run package-web",
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
     "compile-web": "pnpm run check-types && pnpm run lint && node esbuild.js && vite build",
+    "watch": "node esbuild.js --watch",
     "watch-web": "npm-run-all -p watch-web:*",
     "watch-web:esbuild": "node esbuild.js --watch",
     "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "watch-web:vite": "vite build --watch",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
     "package-web": "pnpm run check-types && pnpm run lint && node esbuild.js --production && vite build --mode production",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
@@ -168,6 +172,10 @@
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@tailwindcss/vite": "^4.1.17",
     "@types/assert": "^1.5.11",
+    "@types/koa": "^3.0.1",
+    "@types/koa-bodyparser": "^4.3.13",
+    "@types/koa__cors": "^5.0.1",
+    "@types/koa__router": "^12.0.5",
     "@types/mocha": "^10.0.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -187,10 +195,14 @@
     "vite": "^7.2.2"
   },
   "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "@koa/router": "^14.0.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "koa": "^3.1.1",
+    "koa-bodyparser": "^4.4.1",
     "lucide-react": "^0.454.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
