@@ -58,8 +58,55 @@
         "command": "mock-server.deleteMockApi",
         "title": "Delete Mock API",
         "icon": "$(trash)"
+      },
+      {
+        "command": "mock-server.toggleServer",
+        "title": "Mock Server: Toggle Server"
+      },
+      {
+        "command": "mock-server.startServer",
+        "title": "Mock Server: Start Server",
+        "icon": "$(play)"
+      },
+      {
+        "command": "mock-server.stopServer",
+        "title": "Mock Server: Stop Server",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "mock-server.reloadServer",
+        "title": "Mock Server: Reload Server",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "mock-server.getServerStatus",
+        "title": "Mock Server: Get Server Status"
+      },
+      {
+        "command": "mock-server.testMockApi",
+        "title": "Mock Server: Test Mock API"
       }
     ],
+    "configuration": {
+      "title": "Mock Server",
+      "properties": {
+        "mockServer.port": {
+          "type": "number",
+          "default": 9527,
+          "description": "Port for the mock server"
+        },
+        "mockServer.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the mock server when the extension is activated"
+        },
+        "mockServer.mockDirectory": {
+          "type": "string",
+          "default": ".mock",
+          "description": "Directory containing mock API configurations"
+        }
+      }
+    },
     "menus": {
       "view/title": [
         {
@@ -71,6 +118,11 @@
           "command": "mock-server.createMockApi",
           "when": "view == mockExplorer",
           "group": "navigation"
+        },
+        {
+          "command": "mock-server.startServer",
+          "when": "view == mockExplorer",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -83,6 +135,17 @@
           "command": "mock-server.deleteMockApi",
           "when": "view == mockExplorer && viewItem == mockFile",
           "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mock-server.startServer"
+        },
+        {
+          "command": "mock-server.stopServer"
+        },
+        {
+          "command": "mock-server.reloadServer"
         }
       ]
     }

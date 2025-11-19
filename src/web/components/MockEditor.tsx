@@ -123,9 +123,24 @@ export const MockEditor: React.FC<MockEditorProps> = ({
     setHasUnsavedChanges(false);
   };
 
-  const testApi = () => {
-    // Mock test functionality
-    alert("Test API functionality - Mock server not implemented yet");
+  const testApi = async () => {
+    try {
+      // Use VS Code API to test the mock API
+      const vscode = (window as any).vscode;
+      if (!vscode) {
+        alert("VS Code API not available");
+        return;
+      }
+
+      // Send message to extension to test the API
+      vscode.postMessage({
+        type: "testApi",
+        method: config.method,
+        endpoint: config.endpoint,
+      });
+    } catch (error) {
+      alert(`Failed to test API: ${error}`);
+    }
   };
 
   const generateYaml = (): string => {

@@ -5,6 +5,11 @@ import * as yaml from "yaml";
 import { MockExplorerProvider } from "./mockExplorer";
 import { MockEditorProvider } from "./mockEditorProvider";
 import { MockApiConfig } from "./types";
+import { MockServer } from "./server/mockServer";
+
+// Global mock server instance
+let mockServer: MockServer | null = null;
+let statusBarItem: vscode.StatusBarItem;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -17,6 +22,27 @@ export function activate(context: vscode.ExtensionContext) {
     "Workspace folders:",
     vscode.workspace.workspaceFolders?.map((f) => f.name)
   );
+
+  // Create status bar item
+  statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  statusBarItem.command = "mock-server.toggleServer";
+  updateStatusBar(false, 0);
+  statusBarItem.show();
+  context.subscriptions.push(statusBarItem);
+
+  // Initialize mock server
+  const defaultPort = vscode.workspace
+    .getConfiguration("mockServer")
+    .get<number>("port", 9527);
+
+  mockServer = new MockServer({
+    port: defaultPort,
+    mockDirectory: ".mock",
+  });
+  console.log("MockServer instance created");
 
   // Create tree view provider for Mock Explorer
   const mockExplorerProvider = new MockExplorerProvider();
@@ -237,6 +263,203 @@ rules:
     }
   );
 
+  // Server management commands
+  const toggleServerCommand = vscode.commands.registerCommand(
+    "mock-server.toggleServer",
+    async () => {
+      if (mockServer?.isServerRunning()) {
+        await vscode.commands.executeCommand("mock-server.stopServer");
+      } else {
+        await vscode.commands.executeCommand("mock-server.startServer");
+      }
+    }
+  );
+
+  const startServerCommand = vscode.commands.registerCommand(
+    "mock-server.startServer",
+    async () => {
+      try {
+        if (mockServer?.isServerRunning()) {
+          vscode.window.showInformationMessage(
+            "Mock server is already running"
+          );
+          return;
+        }
+
+        // Load all mock configs from .mock directory
+        const configs = await loadMockConfigs();
+
+        if (configs.length === 0) {
+          vscode.window.showWarningMessage(
+            "No mock API configurations found in .mock directory. Create some first!"
+          );
+          return;
+        }
+
+        // Register routes
+        mockServer?.reloadRoutes(configs);
+
+        // Start server
+        await mockServer?.start();
+
+        const status = mockServer?.getStatus();
+        vscode.window.showInformationMessage(
+          `🚀 Mock Server started on port ${status?.port} with ${status?.routeCount} routes`
+        );
+
+        // Update status bar
+        updateStatusBar(true, status?.routeCount || 0);
+
+        // Notify webviews about server status change
+        notifyServerStatus();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to start mock server: ${error}`);
+        console.error("Error starting server:", error);
+      }
+    }
+  );
+
+  const stopServerCommand = vscode.commands.registerCommand(
+    "mock-server.stopServer",
+    async () => {
+      try {
+        if (!mockServer?.isServerRunning()) {
+          vscode.window.showInformationMessage("Mock server is not running");
+          return;
+        }
+
+        await mockServer?.stop();
+        vscode.window.showInformationMessage("🛑 Mock Server stopped");
+
+        // Update status bar
+        updateStatusBar(false, 0);
+
+        // Notify webviews about server status change
+        notifyServerStatus();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to stop mock server: ${error}`);
+        console.error("Error stopping server:", error);
+      }
+    }
+  );
+
+  const getServerStatusCommand = vscode.commands.registerCommand(
+    "mock-server.getServerStatus",
+    () => {
+      if (!mockServer) {
+        return { running: false, port: 0, routeCount: 0, routes: [] };
+      }
+      return mockServer.getStatus();
+    }
+  );
+
+  const testMockApiCommand = vscode.commands.registerCommand(
+    "mock-server.testMockApi",
+    async (method: string, endpoint: string) => {
+      try {
+        if (!mockServer?.isServerRunning()) {
+          vscode.window.showWarningMessage(
+            "Mock server is not running. Start it first!"
+          );
+          return null;
+        }
+
+        const response = await mockServer.handleRequest(method, endpoint);
+
+        vscode.window.showInformationMessage(
+          `Test response: ${response.status} - ${JSON.stringify(
+            response.body
+          ).substring(0, 50)}...`
+        );
+
+        return response;
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to test API: ${error}`);
+        console.error("Error testing API:", error);
+        return null;
+      }
+    }
+  );
+
+  const reloadServerCommand = vscode.commands.registerCommand(
+    "mock-server.reloadServer",
+    async () => {
+      try {
+        if (!mockServer?.isServerRunning()) {
+          vscode.window.showInformationMessage("Mock server is not running");
+          return;
+        }
+
+        // Reload all mock configs
+        const configs = await loadMockConfigs();
+        mockServer.reloadRoutes(configs);
+
+        vscode.window.showInformationMessage(
+          `🔄 Mock Server reloaded with ${configs.length} routes`
+        );
+
+        // Update status bar with new route count
+        updateStatusBar(true, configs.length);
+
+        notifyServerStatus();
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to reload server: ${error}`);
+        console.error("Error reloading server:", error);
+      }
+    }
+  );
+
+  // File watcher for hot reload
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    const mockDirPattern = new vscode.RelativePattern(
+      workspaceFolders[0],
+      ".mock/**/*.{yaml,yml}"
+    );
+
+    const fileWatcher =
+      vscode.workspace.createFileSystemWatcher(mockDirPattern);
+
+    // Watch for file changes
+    fileWatcher.onDidChange(async (uri) => {
+      console.log("Mock file changed:", uri.path);
+      if (mockServer?.isServerRunning()) {
+        const configs = await loadMockConfigs();
+        mockServer.reloadRoutes(configs);
+        updateStatusBar(true, configs.length);
+        vscode.window.showInformationMessage("🔄 Mock configs reloaded");
+        notifyServerStatus();
+      }
+      mockExplorerProvider.refresh();
+    });
+
+    fileWatcher.onDidCreate(async (uri) => {
+      console.log("Mock file created:", uri.path);
+      if (mockServer?.isServerRunning()) {
+        const configs = await loadMockConfigs();
+        mockServer.reloadRoutes(configs);
+        updateStatusBar(true, configs.length);
+        vscode.window.showInformationMessage("🔄 Mock configs reloaded");
+        notifyServerStatus();
+      }
+      mockExplorerProvider.refresh();
+    });
+
+    fileWatcher.onDidDelete(async (uri) => {
+      console.log("Mock file deleted:", uri.path);
+      if (mockServer?.isServerRunning()) {
+        const configs = await loadMockConfigs();
+        mockServer.reloadRoutes(configs);
+        updateStatusBar(true, configs.length);
+        vscode.window.showInformationMessage("🔄 Mock configs reloaded");
+        notifyServerStatus();
+      }
+      mockExplorerProvider.refresh();
+    });
+
+    context.subscriptions.push(fileWatcher);
+  }
+
   // Add all disposables to context
   context.subscriptions.push(
     treeView,
@@ -246,8 +469,70 @@ rules:
     openMockApiCommand,
     deleteMockApiCommand,
     helloWorldCommand,
+    toggleServerCommand,
+    startServerCommand,
+    stopServerCommand,
+    getServerStatusCommand,
+    testMockApiCommand,
+    reloadServerCommand,
     mockEditorProvider
   );
+
+  // Helper function to update status bar
+  function updateStatusBar(running: boolean, routeCount: number) {
+    const config = vscode.workspace.getConfiguration("mockServer");
+    const port = config.get<number>("port", 9527);
+
+    if (running) {
+      statusBarItem.text = `$(server-process) Mock Server: Running (${routeCount})`;
+      statusBarItem.backgroundColor = undefined;
+      statusBarItem.tooltip = `Mock Server is running on port ${port}\n${routeCount} routes loaded\nClick to stop`;
+    } else {
+      statusBarItem.text = `$(debug-stop) Mock Server: Stopped`;
+      statusBarItem.backgroundColor = new vscode.ThemeColor(
+        "statusBarItem.warningBackground"
+      );
+      statusBarItem.tooltip = `Mock Server is stopped\nClick to start`;
+    }
+  }
+
+  // Helper function to notify webviews about server status
+  function notifyServerStatus() {
+    const status = mockServer?.getStatus();
+    // Update status bar
+    updateStatusBar(status?.running || false, status?.routeCount || 0);
+    // This will be used by webviews to update their UI
+    console.log("Server status changed:", status);
+  }
+
+  // Helper function to load all mock configs from .mock directory
+  async function loadMockConfigs(): Promise<MockApiConfig[]> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      return [];
+    }
+
+    const mockDirUri = vscode.Uri.joinPath(workspaceFolders[0].uri, ".mock");
+    const configs: MockApiConfig[] = [];
+
+    try {
+      const files = await vscode.workspace.fs.readDirectory(mockDirUri);
+
+      for (const [filename, fileType] of files) {
+        if (fileType === vscode.FileType.File && /\.ya?ml$/.test(filename)) {
+          const fileUri = vscode.Uri.joinPath(mockDirUri, filename);
+          const fileContent = await vscode.workspace.fs.readFile(fileUri);
+          const yamlText = new TextDecoder().decode(fileContent);
+          const config = await parseYamlConfig(yamlText, filename);
+          configs.push(config);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading mock configs:", error);
+    }
+
+    return configs;
+  }
 }
 
 // Helper function to parse YAML configuration

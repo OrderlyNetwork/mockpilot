@@ -102,7 +102,7 @@ export class MockEditorProvider {
 
   private _handleWebviewMessage(
     message: any,
-    _panel: vscode.WebviewPanel,
+    panel: vscode.WebviewPanel,
     filePath: string
   ) {
     switch (message.type) {
@@ -112,6 +112,32 @@ export class MockEditorProvider {
       case "showError":
         vscode.window.showErrorMessage(message.message);
         break;
+      case "testApi":
+        this._testApi(message.method, message.endpoint, panel);
+        break;
+    }
+  }
+
+  private async _testApi(
+    method: string,
+    endpoint: string,
+    panel: vscode.WebviewPanel
+  ) {
+    try {
+      const response = await vscode.commands.executeCommand(
+        "mock-server.testMockApi",
+        method,
+        endpoint
+      );
+
+      if (response) {
+        panel.webview.postMessage({
+          type: "testResult",
+          response,
+        });
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to test API: ${error}`);
     }
   }
 

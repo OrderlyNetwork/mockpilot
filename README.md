@@ -1,65 +1,193 @@
-# mock-server README
+# Mock Server - VS Code Extension
 
-This is the README for your extension "mock-server". After writing up a brief description, we recommend including the following sections.
+A powerful and intuitive Mock API Server extension for VS Code that helps developers quickly create, manage, and test mock APIs directly within their development environment.
 
-## Features
+## ✨ Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 📁 **YAML-based Configuration** - Simple, version-controllable mock API definitions
+- 🚀 **One-Click Server Control** - Start/stop mock server from Status Bar
+- 🔄 **Hot Reload** - Automatic reload when configuration files change
+- 🎯 **Visual Editor** - User-friendly WebView interface for editing mock APIs
+- 📊 **Real-time Status** - Server status display in VS Code Status Bar
+- 🧪 **Built-in Testing** - Test APIs directly from the editor
+- 📝 **Multiple Response Rules** - Support for different response scenarios
+- ⚡ **Zero Configuration** - Works out of the box with sensible defaults
 
-For example if there is an image subfolder under your extension project workspace:
+## 🚀 Quick Start
 
-\!\[feature X\]\(images/feature-x.png\)
+1. **Install the extension** from VS Code Marketplace
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+2. **Create `.mock` directory** in your project root:
 
-## Requirements
+   - Use Command Palette: `Mock Server: Create .mock Directory`
+   - Or manually: `mkdir .mock`
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+3. **Create a mock API configuration** (e.g., `.mock/get_user.yaml`):
 
-## Extension Settings
+```yaml
+name: Get User Info
+description: Get user information
+method: GET
+endpoint: /api/user
+rules:
+  - name: Success
+    status: 200
+    headers:
+      Content-Type: application/json
+    body:
+      id: 1
+      name: John Doe
+      email: john@example.com
+    delay: 0
+```
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+4. **Start the server**:
 
-For example:
+   - Click the Status Bar item: `Mock Server: Stopped`
+   - Or use Command Palette: `Mock Server: Start Server`
 
-This extension contributes the following settings:
+5. **Test your API**:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+```bash
+curl http://localhost:9527/api/user
+```
 
-## Known Issues
+## 📖 Documentation
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+For detailed usage instructions, see [USAGE.md](./USAGE.md)
 
-## Release Notes
+## ⚙️ Configuration
 
-Users appreciate release notes as you update your extension.
+Configure the extension in VS Code settings:
 
-### 1.0.0
+```json
+{
+  "mockServer.port": 9527, // Server port (default: 9527)
+  "mockServer.autoStart": false, // Auto-start server on activation
+  "mockServer.mockDirectory": ".mock" // Mock configuration directory
+}
+```
 
-Initial release of ...
+## 🎮 Commands
 
-### 1.0.1
+Access via Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`):
 
-Fixed issue #.
+- `Mock Server: Start Server` - Start the mock server
+- `Mock Server: Stop Server` - Stop the mock server
+- `Mock Server: Toggle Server` - Toggle server on/off
+- `Mock Server: Reload Server` - Reload all configurations
+- `Mock Server: Create .mock Directory` - Create mock config directory
+- `Mock Server: Test Mock API` - Test a specific API endpoint
 
-### 1.1.0
+## 🎯 Status Bar Integration
 
-Added features X, Y, and Z.
+The extension adds a Status Bar item showing the server status:
+
+- **Stopped**: `$(debug-stop) Mock Server: Stopped` (yellow background)
+- **Running**: `$(server-process) Mock Server: Running (5)` - showing route count
+
+Click the Status Bar item to quickly start/stop the server.
+
+## 📝 YAML Configuration Format
+
+```yaml
+name: API Name
+description: API Description
+method: GET | POST | PUT | DELETE | PATCH | HEAD | OPTIONS
+endpoint: /api/path
+rules:
+  - name: Rule Name
+    status: 200
+    headers:
+      Content-Type: application/json
+    body:
+      key: value
+    delay: 0 # milliseconds
+```
+
+## 🔥 Hot Reload
+
+The server automatically reloads when you:
+
+- Modify any `.yaml` or `.yml` file in `.mock` directory
+- Create new mock API files
+- Delete mock API files
+
+No manual restart required!
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js >= 16
+- pnpm (recommended) or npm
+
+### Setup
+
+```bash
+git clone <repository>
+cd mock-server
+pnpm install
+```
+
+### Build & Run
+
+```bash
+# Development build with watch mode
+pnpm run watch-web
+
+# Run in browser
+pnpm run run-in-browser
+
+# Production build
+pnpm run package-web
+
+# Run tests
+pnpm test
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
+
+## 📄 License
+
+MIT License
+
+## 🗺️ Roadmap
+
+- [ ] Advanced rule matching (query, header, body conditions)
+- [ ] CORS configuration support
+- [ ] HTTPS support
+- [ ] Request log viewer
+- [ ] Mock data generator
+- [ ] Import from Postman/Swagger
+- [ ] Response templating
+- [ ] GraphQL mock support
+
+## 💡 Use Cases
+
+- **Frontend Development** - Mock backend APIs while frontend is under development
+- **API Testing** - Test different response scenarios (success, errors, edge cases)
+- **Documentation** - Create living API documentation with examples
+- **Team Collaboration** - Share mock configurations via version control
+- **Offline Development** - Work without backend dependencies
 
 ---
 
+**Enjoy mocking!** 🎉
+
 ## Working with Markdown
 
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+- Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
+- Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
+- Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
 
 ## For more information
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
+- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
 
 **Enjoy!**
