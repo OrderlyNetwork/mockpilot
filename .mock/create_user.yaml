@@ -1,5 +1,12 @@
 name: Create User
 description: 创建新用户
+responseType: |
+  interface UserResponse {
+    id: number;
+    name: string;
+    email: string;
+    created_at: string;
+  }
 method: POST
 endpoint: /api/user
 rules:

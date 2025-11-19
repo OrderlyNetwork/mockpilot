@@ -140,8 +140,25 @@ export class MockEditorProvider {
 
   private _generateYamlContent(config: MockApiConfig): string {
     let yaml = `name: ${config.name}
-description: ${config.description}
-method: ${config.method}
+description: ${config.description}`;
+
+    // Add responseType if it exists and is not empty
+    if (config.responseType && config.responseType.trim()) {
+      // Check if it's a multi-line responseType
+      if (config.responseType.includes("\n")) {
+        yaml += `\nresponseType: |\n`;
+        // Indent each line by 2 spaces
+        const indentedLines = config.responseType
+          .split("\n")
+          .map((line) => `  ${line}`)
+          .join("\n");
+        yaml += indentedLines;
+      } else {
+        yaml += `\nresponseType: ${config.responseType}`;
+      }
+    }
+
+    yaml += `\nmethod: ${config.method}
 endpoint: ${config.endpoint}
 rules:`;
 

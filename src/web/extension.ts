@@ -266,9 +266,10 @@ async function parseYamlConfig(
     const config: Partial<MockApiConfig> = {
       name: parsed.name || filename.replace(/\.(ya?ml)$/, ""),
       description: parsed.description || "No description",
+      responseType: parsed.responseType || "",
       method: parsed.method || "GET",
       endpoint: parsed.endpoint || "/api/unknown",
-      rules: parsed.rules || []
+      rules: parsed.rules || [],
     };
 
     // If no rules, create a default rule

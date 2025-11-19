@@ -9,7 +9,8 @@ export interface MockRule {
 export interface MockApiConfig {
   name: string;
   description: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+  responseType?: string;
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS";
   endpoint: string;
   rules: MockRule[];
 }

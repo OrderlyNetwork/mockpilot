@@ -1,5 +1,5 @@
-import * as vscode from 'vscode';
-import { MockApiConfig } from './types';
+import * as vscode from "vscode";
+import { MockApiConfig } from "./types";
 
 export class MockFileTreeItem extends vscode.TreeItem {
   constructor(
@@ -11,43 +11,49 @@ export class MockFileTreeItem extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
     this.tooltip = this.label;
-    this.description = '';
-    this.contextValue = config ? 'mockFile' : 'mockFolder';
+    this.description = "";
+    this.contextValue = config ? "mockFile" : "mockFolder";
 
     if (config) {
-      this.iconPath = new vscode.ThemeIcon('file-code');
+      this.iconPath = new vscode.ThemeIcon("file-code");
     } else {
-      this.iconPath = new vscode.ThemeIcon('folder');
+      this.iconPath = new vscode.ThemeIcon("folder");
     }
   }
 }
 
-export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTreeItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<MockFileTreeItem | undefined | null | void> = new vscode.EventEmitter<MockFileTreeItem | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<MockFileTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+export class MockExplorerProvider
+  implements vscode.TreeDataProvider<MockFileTreeItem>
+{
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    MockFileTreeItem | undefined | null | void
+  > = new vscode.EventEmitter<MockFileTreeItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<
+    MockFileTreeItem | undefined | null | void
+  > = this._onDidChangeTreeData.event;
 
   private workspaceRoot: string | undefined;
 
   constructor() {
     // Get the workspace root folder
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    console.log('MockExplorerProvider constructor');
-    console.log('Workspace folders:', workspaceFolders);
-    console.log('Workspace folders length:', workspaceFolders?.length);
+    console.log("MockExplorerProvider constructor");
+    console.log("Workspace folders:", workspaceFolders);
+    console.log("Workspace folders length:", workspaceFolders?.length);
 
     if (workspaceFolders && workspaceFolders.length > 0) {
       const folder = workspaceFolders[0];
-      console.log('First workspace folder:', folder);
-      console.log('Folder URI:', folder.uri);
-      console.log('Folder URI scheme:', folder.uri.scheme);
-      console.log('Folder URI path:', folder.uri.path);
-      console.log('Folder URI fsPath:', folder.uri.fsPath);
+      console.log("First workspace folder:", folder);
+      console.log("Folder URI:", folder.uri);
+      console.log("Folder URI scheme:", folder.uri.scheme);
+      console.log("Folder URI path:", folder.uri.path);
+      console.log("Folder URI fsPath:", folder.uri.fsPath);
 
       // Store the workspace URI directly for web extensions
       this.workspaceRoot = folder.uri.path;
-      console.log('Workspace root set to:', this.workspaceRoot);
+      console.log("Workspace root set to:", this.workspaceRoot);
     } else {
-      console.log('No workspace folders found');
+      console.log("No workspace folders found");
     }
   }
 
@@ -60,12 +66,12 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
   }
 
   getChildren(element?: MockFileTreeItem): Thenable<MockFileTreeItem[]> {
-    console.log('getChildren called, element:', element);
-    console.log('workspaceRoot:', this.workspaceRoot);
+    console.log("getChildren called, element:", element);
+    console.log("workspaceRoot:", this.workspaceRoot);
 
     if (!this.workspaceRoot) {
-      console.log('No workspace root found');
-      vscode.window.showInformationMessage('No workspace opened');
+      console.log("No workspace root found");
+      vscode.window.showInformationMessage("No workspace opened");
       return Promise.resolve([]);
     }
 
@@ -78,64 +84,75 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
   }
 
   private async getMockDirectoryItem(): Promise<MockFileTreeItem[]> {
-    console.log('getMockDirectoryItem called');
+    console.log("getMockDirectoryItem called");
 
     // For web extensions, get the workspace folder URI
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-      console.log('No workspace folders found in getMockDirectoryItem');
+      console.log("No workspace folders found in getMockDirectoryItem");
       return Promise.resolve([]);
     }
 
     const workspaceUri = workspaceFolders[0].uri;
-    console.log('Workspace URI:', workspaceUri);
+    console.log("Workspace URI:", workspaceUri);
 
-    const mockUri = vscode.Uri.joinPath(workspaceUri, '.mock');
-    console.log('Looking for .mock directory at:', mockUri);
-    console.log('Mock URI fsPath:', mockUri.fsPath);
-    console.log('Mock URI path:', mockUri.path);
-    console.log('Mock URI scheme:', mockUri.scheme);
+    const mockUri = vscode.Uri.joinPath(workspaceUri, ".mock");
+    console.log("Looking for .mock directory at:", mockUri);
+    console.log("Mock URI fsPath:", mockUri.fsPath);
+    console.log("Mock URI path:", mockUri.path);
+    console.log("Mock URI scheme:", mockUri.scheme);
 
     try {
       // Check if .mock directory exists
       const mockDirUri = mockUri;
       try {
-        console.log('Checking if directory exists...');
+        console.log("Checking if directory exists...");
         const stat = await vscode.workspace.fs.stat(mockDirUri);
-        console.log('Directory stat:', stat);
-        console.log('Directory exists, isDirectory?', stat.type === vscode.FileType.Directory);
+        console.log("Directory stat:", stat);
+        console.log(
+          "Directory exists, isDirectory?",
+          stat.type === vscode.FileType.Directory
+        );
       } catch (error) {
-        console.log('Directory does not exist or error:', error);
+        console.log("Directory does not exist or error:", error);
         // Directory doesn't exist, show empty state
-        return [new MockFileTreeItem(
-          'No .mock directory found',
-          vscode.TreeItemCollapsibleState.None,
-          mockUri.path,
-          undefined,
-          {
-            command: 'mock-server.createMockDirectory',
-            title: 'Create .mock Directory'
-          }
-        )];
+        return [
+          new MockFileTreeItem(
+            "No .mock directory found",
+            vscode.TreeItemCollapsibleState.None,
+            mockUri.path,
+            undefined,
+            {
+              command: "mock-server.createMockDirectory",
+              title: "Create .mock Directory",
+            }
+          ),
+        ];
       }
 
       // Read all YAML files in .mock directory
       const entries = await vscode.workspace.fs.readDirectory(mockDirUri);
       const yamlFiles = entries
-        .filter(([name, type]) => type === vscode.FileType.File && name.endsWith('.yaml') || name.endsWith('.yml'))
+        .filter(
+          ([name, type]) =>
+            (type === vscode.FileType.File && name.endsWith(".yaml")) ||
+            name.endsWith(".yml")
+        )
         .map(([name]) => name);
 
       if (yamlFiles.length === 0) {
-        return [new MockFileTreeItem(
-          'No YAML files found in .mock directory',
-          vscode.TreeItemCollapsibleState.None,
-          mockUri.path,
-          undefined,
-          {
-            command: 'mock-server.createMockApi',
-            title: 'Create Mock API'
-          }
-        )];
+        return [
+          new MockFileTreeItem(
+            "No YAML files found in .mock directory",
+            vscode.TreeItemCollapsibleState.None,
+            mockUri.path,
+            undefined,
+            {
+              command: "mock-server.createMockApi",
+              title: "Create Mock API",
+            }
+          ),
+        ];
       }
 
       // Parse each YAML file and create tree items
@@ -155,9 +172,9 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
             fileUri.path,
             config,
             {
-              command: 'mock-server.openMockApi',
-              title: 'Open Mock API',
-              arguments: [fileUri.toString()]
+              command: "mock-server.openMockApi",
+              title: "Open Mock API",
+              arguments: [fileUri.toString()],
             }
           );
           item.description = config.name;
@@ -173,18 +190,17 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
             errorFileUri.path,
             undefined,
             {
-              command: 'mock-server.openMockApi',
-              title: 'Open File',
-              arguments: [errorFileUri.toString()]
+              command: "mock-server.openMockApi",
+              title: "Open File",
+              arguments: [errorFileUri.toString()],
             }
           );
-          item.description = 'Parse error';
+          item.description = "Parse error";
           mockItems.push(item);
         }
       }
 
       return mockItems.sort((a, b) => a.label.localeCompare(b.label));
-
     } catch (error) {
       vscode.window.showErrorMessage(`Error reading .mock directory: ${error}`);
       return [];
@@ -192,14 +208,17 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
   }
 
   private parseYamlContent(yamlText: string, filename: string): MockApiConfig {
-    console.log('🔍 [DEBUG] MockExplorer.parseYamlContent called for:', filename);
-    console.log('🔍 [DEBUG] YAML content:', yamlText);
+    console.log(
+      "🔍 [DEBUG] MockExplorer.parseYamlContent called for:",
+      filename
+    );
+    console.log("🔍 [DEBUG] YAML content:", yamlText);
 
     // Basic YAML parser - in a real implementation, you'd use a proper YAML library
     // For now, we'll do simple text parsing to extract the required fields
-    const lines = yamlText.split('\n');
+    const lines = yamlText.split("\n");
     const config: Partial<MockApiConfig> = {
-      rules: []
+      rules: [],
     };
 
     let currentRule: any = {};
@@ -214,20 +233,58 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
       const trimmed = line.trim();
       const indent = line.length - line.trimStart().length;
 
-      if (!trimmed || trimmed.startsWith('#')) {continue;}
+      if (!trimmed || trimmed.startsWith("#")) {
+        continue;
+      }
 
       // Parse top-level fields
       if (indent === 0 || indent === 2) {
-        if (trimmed.startsWith('name:')) {
-          config.name = trimmed.substring(5).trim().replace(/['"]/g, '');
-        } else if (trimmed.startsWith('description:')) {
-          config.description = trimmed.substring(13).trim().replace(/['"]/g, '');
-        } else if (trimmed.startsWith('method:')) {
+        if (trimmed.startsWith("name:")) {
+          config.name = trimmed.substring(5).trim().replace(/['"]/g, "");
+        } else if (trimmed.startsWith("description:")) {
+          config.description = trimmed
+            .substring(13)
+            .trim()
+            .replace(/['"]/g, "");
+        } else if (trimmed.startsWith("responseType:")) {
+          // Handle multi-line responseType (using | or >)
+          const value = trimmed.substring(13).trim();
+          if (value === "|" || value === ">") {
+            // Multi-line string, collect following indented lines
+            const responseTypeLines: string[] = [];
+            let j = i + 1;
+            while (j < lines.length) {
+              const nextLine = lines[j];
+              const nextIndent = nextLine.length - nextLine.trimStart().length;
+              const nextTrimmed = nextLine.trim();
+
+              // Stop if we hit a non-indented line or a new top-level field
+              if (
+                nextIndent <= indent &&
+                nextTrimmed &&
+                !nextTrimmed.startsWith("#")
+              ) {
+                break;
+              }
+
+              // Add the line (preserve indentation relative to first content line)
+              if (nextTrimmed) {
+                responseTypeLines.push(nextLine.substring(indent + 2)); // Remove base indentation
+              }
+              j++;
+            }
+            config.responseType = responseTypeLines.join("\n");
+            i = j - 1; // Skip the lines we've processed
+          } else {
+            // Single-line responseType
+            config.responseType = value.replace(/['"]/g, "");
+          }
+        } else if (trimmed.startsWith("method:")) {
           config.method = trimmed.substring(7).trim() as any;
-        } else if (trimmed.startsWith('endpoint:')) {
-          config.endpoint = trimmed.substring(10).trim().replace(/['"]/g, '');
-        } else if (trimmed.startsWith('rules:')) {
-          console.log('🔍 [DEBUG] MockExplorer: Found rules section');
+        } else if (trimmed.startsWith("endpoint:")) {
+          config.endpoint = trimmed.substring(10).trim().replace(/['"]/g, "");
+        } else if (trimmed.startsWith("rules:")) {
+          console.log("🔍 [DEBUG] MockExplorer: Found rules section");
           inRules = true;
           currentIndent = indent;
         }
@@ -235,19 +292,22 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
 
       // Parse rules (indent 4+)
       else if (inRules && indent >= 4) {
-        if (trimmed.startsWith('- name:')) {
-          console.log('🔍 [DEBUG] MockExplorer: Found rule:', trimmed.substring(7).trim());
+        if (trimmed.startsWith("- name:")) {
+          console.log(
+            "🔍 [DEBUG] MockExplorer: Found rule:",
+            trimmed.substring(7).trim()
+          );
           // Save previous rule if exists
           if (currentRule.name) {
             if (bodyLines.length > 0) {
-              const bodyContent = bodyLines.join('\n');
+              const bodyContent = bodyLines.join("\n");
               try {
                 currentRule.body = JSON.parse(bodyContent);
               } catch (e) {
                 // If JSON parsing fails, try to fix common YAML formatting issues
                 const fixedContent = bodyContent
-                  .replace(/"/g, '"')  // Fix quote escaping
-                  .replace(/'/g, "'");  // Fix single quotes
+                  .replace(/"/g, '"') // Fix quote escaping
+                  .replace(/'/g, "'"); // Fix single quotes
                 try {
                   currentRule.body = JSON.parse(fixedContent);
                 } catch (e2) {
@@ -259,27 +319,32 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
             }
             config.rules!.push({ ...currentRule });
           }
-          currentRule = { name: trimmed.substring(7).trim().replace(/['"]/g, '') };
+          currentRule = {
+            name: trimmed.substring(7).trim().replace(/['"]/g, ""),
+          };
           inHeaders = false;
           bodyStart = false;
-        } else if (indent === 6 && trimmed.startsWith('status:')) {
+        } else if (indent === 6 && trimmed.startsWith("status:")) {
           currentRule.status = parseInt(trimmed.substring(7).trim());
-        } else if (indent === 6 && trimmed.startsWith('delay:')) {
+        } else if (indent === 6 && trimmed.startsWith("delay:")) {
           currentRule.delay = parseInt(trimmed.substring(6).trim());
-        } else if (indent === 6 && trimmed.startsWith('headers:')) {
+        } else if (indent === 6 && trimmed.startsWith("headers:")) {
           currentRule.headers = {};
           inHeaders = true;
           bodyStart = false;
-        } else if (inHeaders && indent === 8 && trimmed.includes(':')) {
-          const [key, ...valueParts] = trimmed.split(':');
-          const value = valueParts.join(':').trim();
-          currentRule.headers[key.trim()] = value.replace(/['"]/g, '');
-        } else if (indent === 6 && (trimmed.startsWith('body:') || trimmed.startsWith('body: |'))) {
-          console.log('🔍 [DEBUG] MockExplorer: Found body field');
+        } else if (inHeaders && indent === 8 && trimmed.includes(":")) {
+          const [key, ...valueParts] = trimmed.split(":");
+          const value = valueParts.join(":").trim();
+          currentRule.headers[key.trim()] = value.replace(/['"]/g, "");
+        } else if (
+          indent === 6 &&
+          (trimmed.startsWith("body:") || trimmed.startsWith("body: |"))
+        ) {
+          console.log("🔍 [DEBUG] MockExplorer: Found body field");
           inHeaders = false;
           bodyStart = true;
           // Handle both single-line and multi-line body formats
-          if (trimmed.startsWith('body: |')) {
+          if (trimmed.startsWith("body: |")) {
             // Multi-line format, start collecting body lines
             const bodyContent = trimmed.substring(8).trim();
             if (bodyContent) {
@@ -310,14 +375,14 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
     // Add the last rule if exists
     if (currentRule.name) {
       if (bodyLines.length > 0) {
-        const bodyContent = bodyLines.join('\n');
+        const bodyContent = bodyLines.join("\n");
         try {
           currentRule.body = JSON.parse(bodyContent);
         } catch (e) {
           // If JSON parsing fails, try to fix common YAML formatting issues
           const fixedContent = bodyContent
-            .replace(/"/g, '"')  // Fix quote escaping
-            .replace(/'/g, "'");  // Fix single quotes
+            .replace(/"/g, '"') // Fix quote escaping
+            .replace(/'/g, "'"); // Fix single quotes
           try {
             currentRule.body = JSON.parse(fixedContent);
           } catch (e2) {
@@ -330,31 +395,47 @@ export class MockExplorerProvider implements vscode.TreeDataProvider<MockFileTre
     }
 
     // Set defaults for required fields
-    if (!config.name) {config.name = filename.replace(/\.(ya?ml)$/, '');}
-    if (!config.description) {config.description = 'No description';}
-    if (!config.method) {config.method = 'GET';}
-    if (!config.endpoint) {config.endpoint = '/api/unknown';}
+    if (!config.name) {
+      config.name = filename.replace(/\.(ya?ml)$/, "");
+    }
+    if (!config.description) {
+      config.description = "No description";
+    }
+    if (!config.method) {
+      config.method = "GET";
+    }
+    if (!config.endpoint) {
+      config.endpoint = "/api/unknown";
+    }
     if (!config.rules || config.rules.length === 0) {
-      config.rules = [{
-        name: 'default',
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: {},
-        delay: 0
-      }];
+      config.rules = [
+        {
+          name: "default",
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+          body: {},
+          delay: 0,
+        },
+      ];
     }
 
     // Add defaults for rules
-    config.rules = config.rules.map(rule => ({
+    config.rules = config.rules.map((rule) => ({
       ...rule,
       status: rule.status || 200,
-      headers: rule.headers || { 'Content-Type': 'application/json' },
+      headers: rule.headers || { "Content-Type": "application/json" },
       body: rule.body || {},
-      delay: rule.delay || 0
+      delay: rule.delay || 0,
     }));
 
-    console.log('🔍 [DEBUG] MockExplorer: Final parsed config:', JSON.stringify(config, null, 2));
-    console.log('🔍 [DEBUG] MockExplorer: Rules count:', config.rules?.length || 0);
+    console.log(
+      "🔍 [DEBUG] MockExplorer: Final parsed config:",
+      JSON.stringify(config, null, 2)
+    );
+    console.log(
+      "🔍 [DEBUG] MockExplorer: Rules count:",
+      config.rules?.length || 0
+    );
 
     return config as MockApiConfig;
   }

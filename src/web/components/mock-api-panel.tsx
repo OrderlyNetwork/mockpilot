@@ -11,6 +11,7 @@ import { RuleItem, type Rule } from "./RuleItem";
 interface ApiConfig {
   name: string;
   description: string;
+  responseType: string;
   method: string;
   endpoint: string;
   rules: Rule[];
@@ -51,6 +52,7 @@ export function MockApiPanel({
     return {
       name: loadedConfig.name,
       description: loadedConfig.description || "",
+      responseType: loadedConfig.responseType || "",
       method: loadedConfig.method,
       endpoint: loadedConfig.endpoint,
       rules: convertedRules,
@@ -63,6 +65,7 @@ export function MockApiPanel({
       : {
           name: "Loading...",
           description: "",
+          responseType: "",
           method: "GET",
           endpoint: "",
           rules: [],
@@ -188,6 +191,7 @@ export function MockApiPanel({
     const mockApiConfig: MockApiConfig = {
       name: configToSave.name,
       description: configToSave.description,
+      responseType: configToSave.responseType,
       method: configToSave.method as any,
       endpoint: configToSave.endpoint,
       rules: configToSave.rules.map((rule) => {
@@ -251,9 +255,13 @@ export function MockApiPanel({
           <ApiInfoSection
             name={config.name}
             description={config.description}
+            responseType={config.responseType}
             onNameChange={(name) => setConfig({ ...config, name })}
             onDescriptionChange={(description) =>
               setConfig({ ...config, description })
+            }
+            onResponseTypeChange={(responseType) =>
+              setConfig({ ...config, responseType })
             }
           />
 

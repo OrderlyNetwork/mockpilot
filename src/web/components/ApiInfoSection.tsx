@@ -1,18 +1,23 @@
 import { Input } from "@components/ui/input";
 import { Label } from "@components/ui/label";
+import { ResponseInterface } from "./ResponseInterface";
 
 interface ApiInfoSectionProps {
   name: string;
   description: string;
+  responseType: string;
   onNameChange: (name: string) => void;
   onDescriptionChange: (description: string) => void;
+  onResponseTypeChange: (responseType: string) => void;
 }
 
 export function ApiInfoSection({
   name,
   description,
+  responseType,
   onNameChange,
   onDescriptionChange,
+  onResponseTypeChange,
 }: ApiInfoSectionProps) {
   return (
     <div className="border-b border-border bg-card p-4">
@@ -39,6 +44,11 @@ export function ApiInfoSection({
             className="bg-secondary"
           />
         </div>
+
+        <ResponseInterface
+          responseType={responseType}
+          onChange={onResponseTypeChange}
+        />
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { Rule } from "./RuleItem";
 interface ApiConfig {
   name: string;
   description: string;
+  responseType: string;
   method: string;
   endpoint: string;
   rules: Rule[];
@@ -37,6 +38,7 @@ export function YamlPreview({ config }: YamlPreviewProps) {
 
     const yaml = `name: ${config.name}
 description: ${config.description}
+responseType: ${config.responseType}
 method: ${config.method}
 endpoint: ${config.endpoint}
 rules:
