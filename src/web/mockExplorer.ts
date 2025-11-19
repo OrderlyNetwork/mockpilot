@@ -37,17 +37,17 @@ export class MockExplorerProvider
   constructor() {
     // Get the workspace root folder
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    console.log("MockExplorerProvider constructor");
-    console.log("Workspace folders:", workspaceFolders);
-    console.log("Workspace folders length:", workspaceFolders?.length);
+    // console.log("MockExplorerProvider constructor");
+    // console.log("Workspace folders:", workspaceFolders);
+    // console.log("Workspace folders length:", workspaceFolders?.length);
 
     if (workspaceFolders && workspaceFolders.length > 0) {
       const folder = workspaceFolders[0];
-      console.log("First workspace folder:", folder);
-      console.log("Folder URI:", folder.uri);
-      console.log("Folder URI scheme:", folder.uri.scheme);
-      console.log("Folder URI path:", folder.uri.path);
-      console.log("Folder URI fsPath:", folder.uri.fsPath);
+      // console.log("First workspace folder:", folder);
+      // console.log("Folder URI:", folder.uri);
+      // console.log("Folder URI scheme:", folder.uri.scheme);
+      // console.log("Folder URI path:", folder.uri.path);
+      // console.log("Folder URI fsPath:", folder.uri.fsPath);
 
       // Store the workspace URI directly for web extensions
       this.workspaceRoot = folder.uri.path;
@@ -66,11 +66,11 @@ export class MockExplorerProvider
   }
 
   getChildren(element?: MockFileTreeItem): Thenable<MockFileTreeItem[]> {
-    console.log("getChildren called, element:", element);
-    console.log("workspaceRoot:", this.workspaceRoot);
+    // console.log("getChildren called, element:", element);
+    // console.log("workspaceRoot:", this.workspaceRoot);
 
     if (!this.workspaceRoot) {
-      console.log("No workspace root found");
+      // console.log("No workspace root found");
       vscode.window.showInformationMessage("No workspace opened");
       return Promise.resolve([]);
     }
@@ -97,10 +97,10 @@ export class MockExplorerProvider
     console.log("Workspace URI:", workspaceUri);
 
     const mockUri = vscode.Uri.joinPath(workspaceUri, ".mock");
-    console.log("Looking for .mock directory at:", mockUri);
-    console.log("Mock URI fsPath:", mockUri.fsPath);
-    console.log("Mock URI path:", mockUri.path);
-    console.log("Mock URI scheme:", mockUri.scheme);
+    // console.log("Looking for .mock directory at:", mockUri);
+    // console.log("Mock URI fsPath:", mockUri.fsPath);
+    // console.log("Mock URI path:", mockUri.path);
+    // console.log("Mock URI scheme:", mockUri.scheme);
 
     try {
       // Check if .mock directory exists

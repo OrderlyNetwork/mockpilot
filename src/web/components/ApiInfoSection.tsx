@@ -1,4 +1,5 @@
 import { Input } from "@components/ui/input";
+import { Textarea } from "@components/ui/textarea";
 import { Label } from "@components/ui/label";
 import { ResponseInterface } from "./ResponseInterface";
 
@@ -30,18 +31,18 @@ export function ApiInfoSection({
             id="name"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            className="bg-secondary"
+            className="bg-secondary text-sm"
           />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="description" className="text-muted-foreground">
             Description
           </Label>
-          <Input
+          <Textarea
             id="description"
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
-            className="bg-secondary"
+            className="bg-secondary text-sm"
           />
         </div>
 

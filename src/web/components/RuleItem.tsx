@@ -215,16 +215,19 @@ export function RuleItem({
             </>
           ) : (
             <>
-              <Button
-                size="sm"
-                variant={rule.isActive ? "default" : "outline"}
-                onClick={() => onSetActive(rule.id)}
-                className={
-                  rule.isActive ? "bg-success hover:bg-success/90" : ""
-                }
-              >
-                {rule.isActive ? "Active" : "Set Active"}
-              </Button>
+              {!rule.isActive ? (
+                <Button
+                  size="sm"
+                  variant={rule.isActive ? "default" : "outline"}
+                  onClick={() => onSetActive(rule.id)}
+                  className={
+                    rule.isActive ? "bg-success hover:bg-success/90" : ""
+                  }
+                >
+                  {rule.isActive ? "Active" : "Set Active"}
+                </Button>
+              ) : null}
+
               <Button size="sm" variant="ghost" onClick={startEdit}>
                 Edit
               </Button>

@@ -1,8 +1,16 @@
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
 import { Textarea } from "@components/ui/textarea";
-import { Plus, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  // Maximize2,
+  // Minimize2,
+  ListChevronsDownUp,
+  ListChevronsUpDown,
+} from "lucide-react";
 import { Rule } from "./RuleItem";
+import { useState } from "react";
 
 interface RuleEditorProps {
   rule: Rule;
@@ -11,6 +19,8 @@ interface RuleEditorProps {
 }
 
 export function RuleEditor({ rule, isEditing, onUpdate }: RuleEditorProps) {
+  const [isBodyExpanded, setIsBodyExpanded] = useState(false);
+
   const updateHeader = (oldKey: string, newKey: string, newValue: string) => {
     const newHeaders = { ...rule.headers };
     if (oldKey !== newKey) {
@@ -79,12 +89,16 @@ export function RuleEditor({ rule, isEditing, onUpdate }: RuleEditorProps) {
         {/* Body Section */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-foreground">Response Body</h4>
-          <Textarea
-            value={rule.body}
-            onChange={(e) => onUpdate({ body: e.target.value })}
-            className="min-h-[200px] bg-background font-mono text-sm border-yellow-500 focus:ring-yellow-500"
-            placeholder="Response body (JSON, XML, etc.)"
-          />
+          <div className="relative">
+            <Textarea
+              value={rule.body}
+              onChange={(e) => onUpdate({ body: e.target.value })}
+              className={`bg-background font-mono text-sm border-yellow-500 focus:ring-yellow-500 pr-10 ${
+                isBodyExpanded ? "min-h-[400px]" : "min-h-[200px]"
+              }`}
+              placeholder="Response body (JSON, XML, etc.)"
+            />
+          </div>
         </div>
       </div>
     );
@@ -116,9 +130,27 @@ export function RuleEditor({ rule, isEditing, onUpdate }: RuleEditorProps) {
         <h4 className="mb-2 text-xs font-medium text-muted-foreground">
           Response Body
         </h4>
-        <pre className="max-h-40 overflow-auto rounded border border-border bg-secondary p-2 text-xs font-mono text-foreground">
-          {rule.body}
-        </pre>
+        <div className="relative">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setIsBodyExpanded(!isBodyExpanded)}
+            className="absolute top-2 right-2 h-5 w-5 p-0 z-10 opacity-70 hover:opacity-100 bg-background/80 backdrop-blur-sm border border-border/50"
+          >
+            {isBodyExpanded ? (
+              <ListChevronsDownUp className="h-2.5 w-2.5" />
+            ) : (
+              <ListChevronsUpDown className="h-2.5 w-2.5" />
+            )}
+          </Button>
+          <pre
+            className={`overflow-auto rounded border border-border bg-secondary p-2 text-xs font-mono text-foreground ${
+              isBodyExpanded ? "max-h-none min-h-[200px]" : "max-h-40"
+            }`}
+          >
+            {rule.body}
+          </pre>
+        </div>
       </div>
     </div>
   );

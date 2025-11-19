@@ -287,7 +287,7 @@ export function MockApiPanel({
         <div className="flex flex-1 flex-col overflow-hidden border-r border-border">
           <div className="bg-card px-4 py-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">Response Rules</h3>
+              <h3 className="text-sm font-medium">Mock Rules</h3>
               <Button
                 size="sm"
                 variant="outline"
