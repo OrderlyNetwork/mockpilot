@@ -2,9 +2,8 @@ import * as vscode from "vscode";
 import { MockExplorerProvider } from "../mockExplorer";
 import { MockEditorProvider } from "../mockEditorProvider";
 import { IServerManager } from "../../common/IServerManager";
-import { StatusBarService } from "./statusBarService";
-import { LogOutputService } from "./logOutputService";
-import { parseYamlConfig } from "../utils/yamlParser";
+import { StatusBarService } from "../../services/statusBarService";
+import { LogOutputService } from "../../services/logOutputService";
 import { MockApiConfig } from "../types";
 
 /**
@@ -275,6 +274,7 @@ rules:
       const yamlText = new TextDecoder().decode(fileContent);
 
       // Parse YAML to get config
+      const { parseYamlConfig } = await import("../../utils/yamlParser.js");
       const config = await parseYamlConfig(
         yamlText,
         uri.path.split("/").pop() || "unknown.yaml"

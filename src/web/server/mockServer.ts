@@ -5,7 +5,7 @@
  */
 
 import { MockApiConfig } from "../types";
-import { LogOutputService } from "../services/logOutputService";
+import { LogOutputService } from "../../services/logOutputService";
 
 export interface ServerConfig {
   port: number;

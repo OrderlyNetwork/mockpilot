@@ -8,7 +8,8 @@
       "Bash(pnpm run check-types:*)",
       "Bash(pnpm run build-web:*)",
       "Bash(pnpm run dev:*)",
-      "Bash(pnpm run serve:*)"
+      "Bash(pnpm run serve:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
