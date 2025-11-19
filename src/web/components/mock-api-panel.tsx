@@ -1,39 +1,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@components/ui/button";
-import { Input } from "@components/ui/input";
-import { Label } from "@components/ui/label";
-import { Textarea } from "@components/ui/textarea";
-import { Badge } from "@components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@components/ui/tabs";
-import {
-  Plus,
-  Trash2,
-  Play,
-  Save,
-  Copy,
-  Check,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { MockApiConfig } from "../types";
 import { postMessageToExtension } from "../utils/vscode";
-
-interface Rule {
-  id: string;
-  name: string;
-  status: number;
-  headers: Record<string, string>;
-  body: string;
-  delay: number;
-  isActive: boolean;
-}
+import { ApiHeader } from "./ApiHeader";
+import { ApiInfoSection } from "./ApiInfoSection";
+import { YamlPreview } from "./YamlPreview";
+import { RuleItem, type Rule } from "./RuleItem";
 
 interface ApiConfig {
   name: string;
@@ -52,10 +25,11 @@ export function MockApiPanel({
   initialConfig,
   initialFilePath,
 }: MockApiPanelProps) {
-  const [copied, setCopied] = useState(false);
-  const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
   const [filePath, setFilePath] = useState<string>(initialFilePath || "");
   const [isLoading, setIsLoading] = useState(!initialConfig);
+  const [newlyCreatedRuleId, setNewlyCreatedRuleId] = useState<string | null>(
+    null
+  );
 
   // Convert MockApiConfig to ApiConfig helper function
   const convertToApiConfig = (loadedConfig: MockApiConfig): ApiConfig => {
@@ -95,10 +69,6 @@ export function MockApiPanel({
         }
   );
 
-  const [activeRuleId, setActiveRuleId] = useState(
-    initialConfig && initialConfig.rules?.length > 0 ? "1" : ""
-  );
-
   // Listen for messages from the extension (for non-initial updates)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -112,11 +82,6 @@ export function MockApiPanel({
         setConfig(converted);
         setFilePath(loadedFilePath);
         setIsLoading(false);
-
-        // Set first rule as active
-        if (converted.rules.length > 0) {
-          setActiveRuleId(converted.rules[0].id);
-        }
       }
     };
 
@@ -127,22 +92,11 @@ export function MockApiPanel({
     };
   }, []);
 
-  const toggleRuleExpand = (id: string) => {
-    setExpandedRules((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   const addRule = () => {
     const ruleNumber = config.rules.length + 1;
+    const newRuleId = Date.now().toString();
     const newRule: Rule = {
-      id: Date.now().toString(),
+      id: newRuleId,
       name: `Rule ${ruleNumber}`,
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -150,6 +104,10 @@ export function MockApiPanel({
       delay: 0,
       isActive: false,
     };
+
+    // Set the newly created rule ID to trigger expansion and edit mode
+    setNewlyCreatedRuleId(newRuleId);
+
     setConfig((prev) => ({
       ...prev,
       rules: [...prev.rules, newRule],
@@ -160,22 +118,29 @@ export function MockApiPanel({
     const newRules = config.rules.filter((r) => r.id !== id);
     if (newRules.length === 0) return; // Don't delete the last rule
 
+    // Clear newly created rule ID if deleting that rule
+    if (id === newlyCreatedRuleId) {
+      setNewlyCreatedRuleId(null);
+    }
+
+    // If deleting the active rule, set the first remaining rule as active
+    const deletedRuleWasActive = config.rules.find(
+      (r) => r.id === id
+    )?.isActive;
+    if (deletedRuleWasActive && newRules.length > 0) {
+      newRules[0].isActive = true;
+    }
+
     setConfig((prev) => ({
       ...prev,
       rules: newRules,
     }));
+  };
 
-    // If deleting the active rule, set the first remaining rule as active
-    if (activeRuleId === id) {
-      const newActiveRule = newRules[0];
-      setActiveRuleId(newActiveRule.id);
-      setConfig((prev) => ({
-        ...prev,
-        rules: prev.rules.map((r) => ({
-          ...r,
-          isActive: r.id === newActiveRule.id,
-        })),
-      }));
+  const handleRuleEditComplete = (id: string) => {
+    // Clear the newly created rule ID when edit is complete
+    if (id === newlyCreatedRuleId) {
+      setNewlyCreatedRuleId(null);
     }
   };
 
@@ -191,60 +156,41 @@ export function MockApiPanel({
       ...prev,
       rules: prev.rules.map((r) => ({ ...r, isActive: r.id === id })),
     }));
-    setActiveRuleId(id);
   };
 
-  const generateYaml = () => {
-    const formatBody = (body: string) => {
+  const saveConfigToFile = (configToSave: ApiConfig) => {
+    // Validate all rule bodies are valid JSON
+    const validationErrors: string[] = [];
+
+    configToSave.rules.forEach((rule, index) => {
       try {
-        // Try to parse as JSON for proper formatting
-        const parsed = JSON.parse(body);
-        const jsonString = JSON.stringify(parsed, null, 2);
-        // Indent each line for YAML
-        return jsonString
-          .split("\n")
-          .map((line, i) => (i === 0 ? line : `      ${line}`))
-          .join("\n");
-      } catch {
-        // If not JSON, just handle as string
-        return body.replace(/\n/g, "\n      ");
+        JSON.parse(rule.body);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Invalid JSON";
+        validationErrors.push(
+          `Rule "${rule.name}" (${index + 1}): ${errorMessage}`
+        );
       }
-    };
+    });
 
-    const yaml = `name: ${config.name}
-description: ${config.description}
-method: ${config.method}
-endpoint: ${config.endpoint}
-rules:
-${config.rules
-  .map(
-    (rule) => `  - name: ${rule.name}
-    status: ${rule.status}
-    headers:
-${Object.entries(rule.headers)
-  .map(([key, value]) => `      ${key}: ${value}`)
-  .join("\n")}
-    body: ${formatBody(rule.body)}
-    delay: ${rule.delay}`
-  )
-  .join("\n")}`;
-    return yaml;
-  };
+    // If there are validation errors, show them and don't save
+    if (validationErrors.length > 0) {
+      const errorMsg = validationErrors.join("\\n");
+      postMessageToExtension({
+        type: "showError",
+        message: `Cannot save: Invalid JSON in rule bodies\\n\\n${errorMsg}`,
+      });
+      return;
+    }
 
-  const copyYaml = () => {
-    navigator.clipboard.writeText(generateYaml());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSave = () => {
     // Convert ApiConfig back to MockApiConfig format
     const mockApiConfig: MockApiConfig = {
-      name: config.name,
-      description: config.description,
-      method: config.method as any,
-      endpoint: config.endpoint,
-      rules: config.rules.map((rule) => {
+      name: configToSave.name,
+      description: configToSave.description,
+      method: configToSave.method as any,
+      endpoint: configToSave.endpoint,
+      rules: configToSave.rules.map((rule) => {
         // Parse body if it's a JSON string
         let parsedBody: any;
         try {
@@ -271,6 +217,10 @@ ${Object.entries(rule.headers)
     });
   };
 
+  const handleSave = () => {
+    saveConfigToFile(config);
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -287,82 +237,25 @@ ${Object.entries(rule.headers)
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Select
-            value={config.method}
-            onValueChange={(value) => setConfig({ ...config, method: value })}
-          >
-            <SelectTrigger className="w-24 bg-secondary text-secondary-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="GET">GET</SelectItem>
-              <SelectItem value="POST">POST</SelectItem>
-              <SelectItem value="PUT">PUT</SelectItem>
-              <SelectItem value="PATCH">PATCH</SelectItem>
-              <SelectItem value="DELETE">DELETE</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input
-            value={config.endpoint}
-            onChange={(e) => setConfig({ ...config, endpoint: e.target.value })}
-            className="w-96 bg-secondary font-mono text-sm"
-            placeholder="/api/endpoint"
-          />
-          <Button size="sm" variant="default" className="gap-2">
-            <Play className="h-4 w-4" />
-            Test
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="gap-2"
-            onClick={handleSave}
-          >
-            <Save className="h-4 w-4" />
-            Save
-          </Button>
-        </div>
-      </div>
+      <ApiHeader
+        method={config.method}
+        endpoint={config.endpoint}
+        onMethodChange={(method) => setConfig({ ...config, method })}
+        onEndpointChange={(endpoint) => setConfig({ ...config, endpoint })}
+        onSave={handleSave}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* API Info */}
-          <div className="border-b border-border bg-card p-4">
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name" className="text-muted-foreground">
-                  API Name
-                </Label>
-                <Input
-                  id="name"
-                  value={config.name}
-                  onChange={(e) =>
-                    setConfig({ ...config, name: e.target.value })
-                  }
-                  className="bg-secondary"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description" className="text-muted-foreground">
-                  Description
-                </Label>
-                <Input
-                  id="description"
-                  value={config.description}
-                  onChange={(e) =>
-                    setConfig({ ...config, description: e.target.value })
-                  }
-                  className="bg-secondary"
-                />
-              </div>
-            </div>
-          </div>
+          <ApiInfoSection
+            name={config.name}
+            description={config.description}
+            onNameChange={(name) => setConfig({ ...config, name })}
+            onDescriptionChange={(description) =>
+              setConfig({ ...config, description })
+            }
+          />
 
           {/* Rules Section */}
           <div className="flex flex-1 flex-col overflow-hidden">
@@ -384,156 +277,24 @@ ${Object.entries(rule.headers)
             {/* Rules List */}
             <div className="flex-1 overflow-auto">
               <div className="divide-y divide-border">
-                {config.rules.map((rule) => {
-                  const isExpanded = expandedRules.has(rule.id);
-                  return (
-                    <div
-                      key={rule.id}
-                      className={`border-l-4 transition-colors ${
-                        rule.isActive
-                          ? "border-l-primary bg-primary/5"
-                          : "border-l-transparent hover:bg-accent/50"
-                      }`}
-                    >
-                      {/* Rule Header */}
-                      <div
-                        className="flex cursor-pointer items-center justify-between px-4 py-3"
-                        onClick={() => toggleRuleExpand(rule.id)}
-                      >
-                        <div className="flex flex-1 items-center gap-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium">{rule.name}</span>
-                            {rule.isActive && (
-                              <Badge className="bg-success text-white">
-                                Active
-                              </Badge>
-                            )}
-                            <Badge
-                              variant="outline"
-                              className="font-mono text-xs"
-                            >
-                              {rule.status}
-                            </Badge>
-                            {rule.delay > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                {rule.delay}ms delay
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant={rule.isActive ? "default" : "outline"}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveRule(rule.id);
-                            }}
-                            className={
-                              rule.isActive
-                                ? "bg-success hover:bg-success/90"
-                                : ""
-                            }
-                          >
-                            {rule.isActive ? "Active" : "Set Active"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveRuleId(rule.id);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteRule(rule.id);
-                            }}
-                            disabled={config.rules.length === 1}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Rule Details - Collapsible */}
-                      {isExpanded && (
-                        <div className="border-t border-border bg-card/50 px-4 py-4">
-                          <div className="space-y-4">
-                            {/* Headers Preview */}
-                            <div>
-                              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
-                                Headers
-                              </h4>
-                              <div className="space-y-1">
-                                {Object.entries(rule.headers).map(
-                                  ([key, value]) => (
-                                    <div
-                                      key={key}
-                                      className="flex gap-2 text-xs font-mono text-muted-foreground"
-                                    >
-                                      <span className="text-foreground">
-                                        {key}:
-                                      </span>
-                                      <span>{value}</span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Body Preview */}
-                            <div>
-                              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
-                                Response Body
-                              </h4>
-                              <pre className="max-h-40 overflow-auto rounded border border-border bg-secondary p-2 text-xs font-mono text-foreground">
-                                {rule.body}
-                              </pre>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {config.rules.map((rule) => (
+                  <RuleItem
+                    key={rule.id}
+                    rule={rule}
+                    isOnlyRule={config.rules.length === 1}
+                    isNewlyCreated={rule.id === newlyCreatedRuleId}
+                    onSetActive={setActiveRule}
+                    onUpdate={updateRule}
+                    onDelete={deleteRule}
+                    onEditComplete={handleRuleEditComplete}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Sidebar - YAML Preview */}
-        <div className="w-96 border-l border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h3 className="text-sm font-medium">YAML Preview</h3>
-            <Button size="sm" variant="ghost" onClick={copyYaml}>
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <pre className="overflow-auto p-4 font-mono text-xs text-muted-foreground">
-            {generateYaml()}
-          </pre>
-        </div>
+        <YamlPreview config={config} />
       </div>
     </div>
   );

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { MockApiExplorer } from "../components/MockApiExplorer";
+
 import { MockApiPanel } from "../components/mock-api-panel";
-import { MockEditor } from "../components/MockEditor";
-import { ServerStatus } from "../components/ServerStatus";
 import { MockApi } from "../types/mockApi";
 import { MockApiConfig } from "../types";
 import { postMessageToExtension } from "../utils/vscode";

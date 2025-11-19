@@ -109,6 +109,9 @@ export class MockEditorProvider {
       case "saveConfig":
         this._saveConfig(message.config, filePath);
         break;
+      case "showError":
+        vscode.window.showErrorMessage(message.message);
+        break;
     }
   }
 
