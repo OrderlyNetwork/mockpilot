@@ -5,6 +5,7 @@
  */
 
 import { MockApiConfig } from "../types";
+import { LogOutputService } from "../services/logOutputService";
 
 export interface ServerConfig {
   port: number;
@@ -22,6 +23,7 @@ export class MockServer {
   private isRunning: boolean = false;
   private port: number;
   private mockDirectory: string;
+  private logger: LogOutputService;
   private requestLog: Array<{
     timestamp: Date;
     method: string;
@@ -32,6 +34,7 @@ export class MockServer {
   constructor(config: ServerConfig) {
     this.port = config.port;
     this.mockDirectory = config.mockDirectory;
+    this.logger = LogOutputService.getInstance();
   }
 
   /**
@@ -40,15 +43,15 @@ export class MockServer {
   public start(): Promise<void> {
     return new Promise((resolve) => {
       if (this.isRunning) {
-        console.log("Mock server is already running");
+        this.logger.warn("Mock server is already running");
         resolve();
         return;
       }
 
       this.isRunning = true;
-      console.log(`🚀 Mock Server started on port ${this.port}`);
-      console.log(`📁 Mock directory: ${this.mockDirectory}`);
-      console.log(`📋 Registered routes: ${this.getRouteCount()}`);
+      const routeCount = this.getRouteCount();
+      this.logger.logServerStart(this.port, routeCount);
+      this.logger.info(`📁 Mock directory: ${this.mockDirectory}`);
       resolve();
     });
   }
@@ -59,13 +62,13 @@ export class MockServer {
   public stop(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.isRunning) {
-        console.log("Mock server is not running");
+        this.logger.warn("Mock server is not running");
         resolve();
         return;
       }
 
       this.isRunning = false;
-      console.log("🛑 Mock Server stopped");
+      this.logger.logServerStop();
       resolve();
     });
   }
@@ -93,8 +96,10 @@ export class MockServer {
       config,
     });
 
-    console.log(
-      `✅ Registered route: ${config.method} ${config.endpoint} (${config.name})`
+    this.logger.logRouteRegistration(
+      config.method,
+      config.endpoint,
+      config.name
     );
   }
 
@@ -125,9 +130,7 @@ export class MockServer {
       this.routes.delete(key);
     }
 
-    console.log(
-      `❌ Unregistered route: ${method} ${endpoint}${name ? ` (${name})` : ""}`
-    );
+    this.logger.logRouteUnregistration(method, endpoint, name);
   }
 
   /**
@@ -136,7 +139,7 @@ export class MockServer {
   public reloadRoutes(configs: MockApiConfig[]): void {
     this.routes.clear();
     configs.forEach((config) => this.registerRoute(config));
-    console.log(`🔄 Reloaded ${configs.length} routes`);
+    this.logger.logRouteReload(configs.length);
   }
 
   /**
@@ -152,9 +155,14 @@ export class MockServer {
     headers: Record<string, string>;
     body: any;
   }> {
+    const startTime = Date.now();
+
     if (!this.isRunning) {
+      const status = 503;
+      const duration = Date.now() - startTime;
+      this.logger.logRequest(method, path, status, duration);
       return {
-        status: 503,
+        status,
         headers: { "Content-Type": "application/json" },
         body: { error: "Mock server is not running" },
       };
@@ -165,9 +173,12 @@ export class MockServer {
 
     if (!routes || routes.length === 0) {
       // Route not found
-      this.logRequest(method, path, 404);
+      const status = 404;
+      const duration = Date.now() - startTime;
+      this.logRequest(method, path, status);
+      this.logger.logRequest(method, path, status, duration);
       return {
-        status: 404,
+        status,
         headers: { "Content-Type": "application/json" },
         body: { error: `Route not found: ${method} ${path}` },
       };
@@ -195,7 +206,9 @@ export class MockServer {
       await new Promise((resolve) => setTimeout(resolve, rule.delay));
     }
 
+    const duration = Date.now() - startTime;
     this.logRequest(method, path, rule.status);
+    this.logger.logRequest(method, path, rule.status, duration);
 
     return {
       status: rule.status,

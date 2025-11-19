@@ -3,6 +3,7 @@ import { MockServer } from "../server/mockServer";
 import { MockApiConfig } from "../types";
 import { parseYamlConfig } from "../utils/yamlParser";
 import { IServerManager } from "../../common/IServerManager";
+import { LogOutputService } from "./logOutputService";
 
 /**
  * Service for managing the Mock Server instance and configurations (Web Version)
@@ -54,7 +55,8 @@ export class ServerManagerService implements IServerManager {
         }
       }
     } catch (error) {
-      console.error("Error loading mock configs:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error loading mock configs", error);
     }
 
     return configs;
@@ -97,7 +99,8 @@ export class ServerManagerService implements IServerManager {
         routeCount: status?.routeCount,
       };
     } catch (error) {
-      console.error("Error starting server:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error starting server", error);
       return { success: false, error: String(error) };
     }
   }
@@ -114,7 +117,8 @@ export class ServerManagerService implements IServerManager {
       await this.mockServer?.stop();
       return { success: true };
     } catch (error) {
-      console.error("Error stopping server:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error stopping server", error);
       return { success: false, error: String(error) };
     }
   }
@@ -137,7 +141,8 @@ export class ServerManagerService implements IServerManager {
 
       return { success: true, routeCount: configs.length };
     } catch (error) {
-      console.error("Error reloading server:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error reloading server", error);
       return { success: false, error: String(error) };
     }
   }

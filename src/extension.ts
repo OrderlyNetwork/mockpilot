@@ -7,6 +7,7 @@ import { StatusBarService } from "./web/services/statusBarService";
 import { ServerManagerService } from "./desktop/services/serverManagerService";
 import { CommandService } from "./web/services/commandService";
 import { FileWatcherService } from "./web/services/fileWatcherService";
+import { LogOutputService } from "./web/services/logOutputService";
 
 // This method is called when your extension is activated (Desktop version)
 // Your extension is activated the very first time the command is executed
@@ -62,8 +63,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
   fileWatcherService.initialize(context);
 
+  // Initialize logger service
+  const logger = LogOutputService.getInstance();
+  logger.info("Mock Server extension initialized (Desktop Version)");
+
   // Add tree view and mock editor provider to disposables
-  context.subscriptions.push(treeView, mockEditorProvider);
+  context.subscriptions.push(treeView, mockEditorProvider, {
+    dispose: () => logger.dispose(),
+  });
 
   // Check if auto-start is enabled
   const config = vscode.workspace.getConfiguration("mockServer");

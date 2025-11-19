@@ -3,6 +3,7 @@ import { MockServer } from "../mockServer";
 import { MockApiConfig } from "../../web/types";
 import { parseYamlConfig } from "../../web/utils/yamlParser";
 import { IServerManager } from "../../common/IServerManager";
+import { LogOutputService } from "../../web/services/logOutputService";
 
 /**
  * Service for managing the Mock Server instance and configurations (Desktop Version)
@@ -19,7 +20,8 @@ export class ServerManagerService implements IServerManager {
       port: defaultPort,
       mockDirectory: ".mock",
     });
-    console.log("MockServer instance created (Desktop with Koa.js)");
+    const logger = LogOutputService.getInstance();
+    logger.info("MockServer instance created (Desktop with Koa.js)");
   }
 
   /**
@@ -54,7 +56,8 @@ export class ServerManagerService implements IServerManager {
         }
       }
     } catch (error) {
-      console.error("Error loading mock configs:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error loading mock configs", error);
     }
 
     return configs;
@@ -97,7 +100,8 @@ export class ServerManagerService implements IServerManager {
         routeCount: status?.routeCount,
       };
     } catch (error) {
-      console.error("Error starting server:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error starting server", error);
       return { success: false, error: String(error) };
     }
   }
@@ -114,7 +118,8 @@ export class ServerManagerService implements IServerManager {
       await this.mockServer?.stop();
       return { success: true };
     } catch (error) {
-      console.error("Error stopping server:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error stopping server", error);
       return { success: false, error: String(error) };
     }
   }
@@ -137,7 +142,8 @@ export class ServerManagerService implements IServerManager {
 
       return { success: true, routeCount: configs.length };
     } catch (error) {
-      console.error("Error reloading server:", error);
+      const logger = LogOutputService.getInstance();
+      logger.error("Error reloading server", error);
       return { success: false, error: String(error) };
     }
   }

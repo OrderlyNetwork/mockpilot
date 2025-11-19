@@ -9,6 +9,7 @@ import bodyParser from "koa-bodyparser";
 import { Server } from "http";
 import { MockApiConfig, MockRule } from "../web/types";
 import { RuleEngine } from "./ruleEngine";
+import { LogOutputService } from "../web/services/logOutputService";
 
 export interface ServerConfig {
   port: number;
@@ -29,6 +30,7 @@ export class MockServer {
   private isRunning: boolean = false;
   private port: number;
   private mockDirectory: string;
+  private logger: LogOutputService;
   private requestLog: Array<{
     timestamp: Date;
     method: string;
@@ -39,6 +41,7 @@ export class MockServer {
   constructor(config: ServerConfig) {
     this.port = config.port;
     this.mockDirectory = config.mockDirectory;
+    this.logger = LogOutputService.getInstance();
     this.app = new Koa();
     this.router = new Router();
 
@@ -59,7 +62,7 @@ export class MockServer {
         ctx.body = {
           error: err.message || "Internal Server Error",
         };
-        console.error("Error handling request:", err);
+        this.logger.error("Error handling request", err);
       }
     });
 
@@ -80,7 +83,7 @@ export class MockServer {
       const start = Date.now();
       await next();
       const ms = Date.now() - start;
-      console.log(`${ctx.method} ${ctx.url} - ${ctx.status} - ${ms}ms`);
+      this.logger.logRequest(ctx.method, ctx.url, ctx.status, ms);
 
       this.logRequest(ctx.method, ctx.url, ctx.status);
     });
@@ -92,7 +95,7 @@ export class MockServer {
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.isRunning) {
-        console.log("Mock server is already running");
+        this.logger.warn("Mock server is already running");
         resolve();
         return;
       }
@@ -108,9 +111,9 @@ export class MockServer {
         // Start server
         this.server = this.app.listen(this.port, () => {
           this.isRunning = true;
-          console.log(`🚀 Mock Server started on http://localhost:${this.port}`);
-          console.log(`📁 Mock directory: ${this.mockDirectory}`);
-          console.log(`📋 Registered routes: ${this.getRouteCount()}`);
+          const routeCount = this.getRouteCount();
+          this.logger.logServerStart(this.port, routeCount);
+          this.logger.info(`📁 Mock directory: ${this.mockDirectory}`);
           resolve();
         });
 
@@ -133,7 +136,7 @@ export class MockServer {
   public stop(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.isRunning || !this.server) {
-        console.log("Mock server is not running");
+        this.logger.warn("Mock server is not running");
         resolve();
         return;
       }
@@ -144,7 +147,7 @@ export class MockServer {
         } else {
           this.isRunning = false;
           this.server = null;
-          console.log("🛑 Mock Server stopped");
+          this.logger.logServerStop();
           resolve();
         }
       });
@@ -220,11 +223,13 @@ export class MockServer {
             this.router.patch(endpoint, handler);
             break;
           default:
-            console.warn(`Unsupported HTTP method: ${method}`);
+            this.logger.warn(`Unsupported HTTP method: ${method}`);
         }
 
-        console.log(
-          `✅ Registered route: ${method.toUpperCase()} ${endpoint} (${config.name})`
+        this.logger.logRouteRegistration(
+          method.toUpperCase(),
+          endpoint,
+          config.name
         );
       });
     });
@@ -299,9 +304,7 @@ export class MockServer {
       this.routes.delete(key);
     }
 
-    console.log(
-      `❌ Unregistered route: ${method} ${endpoint}${name ? ` (${name})` : ""}`
-    );
+    this.logger.logRouteUnregistration(method, endpoint, name);
 
     // If server is running, reload routes
     if (this.isRunning) {
@@ -321,7 +324,7 @@ export class MockServer {
       this.setupRoutes();
     }
 
-    console.log(`🔄 Reloaded ${configs.length} routes`);
+    this.logger.logRouteReload(configs.length);
   }
 
   /**
@@ -367,10 +370,7 @@ export class MockServer {
       body,
     };
 
-    const rule = RuleEngine.findMatchingRule(
-      config.rules || [],
-      matchContext
-    );
+    const rule = RuleEngine.findMatchingRule(config.rules || [], matchContext);
 
     if (!rule) {
       return {

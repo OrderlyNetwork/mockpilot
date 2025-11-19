@@ -52,12 +52,7 @@ export class MockEditorProvider {
 
     // Get the CSS URI for styles
     const webviewStylesUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this._extensionUri,
-        "dist",
-        "web",
-        "webview-webview.css"
-      )
+      vscode.Uri.joinPath(this._extensionUri, "dist", "web", "webview.css")
     );
 
     return `<!DOCTYPE html>
@@ -65,7 +60,7 @@ export class MockEditorProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; script-src-elem 'nonce-${nonce}';">
     <title>Mock API Editor</title>
     <link rel="stylesheet" href="${webviewStylesUri}">
     <style>
@@ -95,7 +90,7 @@ export class MockEditorProvider {
     <div id="root">
         <div class="loading">Loading Mock Editor...</div>
     </div>
-    <script nonce="${nonce}" src="${webviewScriptUri}"></script>
+    <script type="module" nonce="${nonce}" src="${webviewScriptUri}"></script>
 </body>
 </html>`;
   }

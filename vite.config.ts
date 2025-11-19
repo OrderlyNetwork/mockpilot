@@ -37,7 +37,13 @@ export default defineConfig({
         // WebView输出为ES模块，可以在浏览器中直接运行
         entryFileNames: "webview.js",
         chunkFileNames: "webview-[name].js",
-        assetFileNames: "webview-[name].[ext]",
+        assetFileNames: (assetInfo) => {
+          // 固定 CSS 文件名，避免 hash 变化导致引用失败
+          if (assetInfo.name?.endsWith(".css")) {
+            return "webview.css";
+          }
+          return "webview-[name].[ext]";
+        },
         format: "es",
       },
     },

@@ -7,6 +7,7 @@ import { StatusBarService } from "./services/statusBarService";
 import { ServerManagerService } from "./services/serverManagerService";
 import { CommandService } from "./services/commandService";
 import { FileWatcherService } from "./services/fileWatcherService";
+import { LogOutputService } from "./services/logOutputService";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -62,8 +63,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
   fileWatcherService.initialize(context);
 
+  // Initialize logger service
+  const logger = LogOutputService.getInstance();
+  logger.info("Mock Server extension initialized");
+
   // Add tree view and mock editor provider to disposables
-  context.subscriptions.push(treeView, mockEditorProvider);
+  context.subscriptions.push(treeView, mockEditorProvider, {
+    dispose: () => logger.dispose(),
+  });
 }
 
 // This method is called when your extension is deactivated

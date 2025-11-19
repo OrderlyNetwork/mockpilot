@@ -3,6 +3,7 @@ import { MockExplorerProvider } from "../mockExplorer";
 import { MockEditorProvider } from "../mockEditorProvider";
 import { IServerManager } from "../../common/IServerManager";
 import { StatusBarService } from "./statusBarService";
+import { LogOutputService } from "./logOutputService";
 import { parseYamlConfig } from "../utils/yamlParser";
 
 /**
@@ -74,6 +75,11 @@ export class CommandService {
       "mock-server.reloadServer",
       this.reloadServer.bind(this)
     );
+
+    // Log output commands
+    this.registerCommand("mock-server.showLogs", this.showLogs.bind(this));
+
+    this.registerCommand("mock-server.clearLogs", this.clearLogs.bind(this));
 
     // Legacy hello world command
     this.registerCommand("mock-server.helloWorld", () => {
@@ -375,5 +381,22 @@ rules:
         );
       }
     }
+  }
+
+  /**
+   * Show logs in OUTPUT panel
+   */
+  private showLogs(): void {
+    const logger = LogOutputService.getInstance();
+    logger.show();
+  }
+
+  /**
+   * Clear logs in OUTPUT panel
+   */
+  private clearLogs(): void {
+    const logger = LogOutputService.getInstance();
+    logger.clear();
+    vscode.window.showInformationMessage("Mock Server logs cleared");
   }
 }

@@ -86,6 +86,16 @@
       {
         "command": "mock-server.testMockApi",
         "title": "Mock Server: Test Mock API"
+      },
+      {
+        "command": "mock-server.showLogs",
+        "title": "Mock Server: Show Logs",
+        "icon": "$(output)"
+      },
+      {
+        "command": "mock-server.clearLogs",
+        "title": "Mock Server: Clear Logs",
+        "icon": "$(clear-all)"
       }
     ],
     "configuration": {
@@ -124,6 +134,11 @@
           "command": "mock-server.startServer",
           "when": "view == mockExplorer",
           "group": "navigation@1"
+        },
+        {
+          "command": "mock-server.showLogs",
+          "when": "view == mockExplorer",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -147,6 +162,12 @@
         },
         {
           "command": "mock-server.reloadServer"
+        },
+        {
+          "command": "mock-server.showLogs"
+        },
+        {
+          "command": "mock-server.clearLogs"
         }
       ]
     }
