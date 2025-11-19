@@ -3,10 +3,33 @@
   "displayName": "Mock Server",
   "description": "Visual Mock API Server for VS Code",
   "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "author": {
+    "name": "Your Name"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/mock-vs-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/mock-vs-extension/issues"
+  },
+  "homepage": "https://github.com/your-username/mock-vs-extension#readme",
+  "keywords": [
+    "mock",
+    "api",
+    "server",
+    "testing",
+    "development",
+    "http",
+    "rest"
+  ],
   "engines": {
     "vscode": "^1.106.0"
   },
   "categories": [
+    "Testing",
     "Other"
   ],
   "activationEvents": [
@@ -187,7 +210,9 @@
     "package-web": "pnpm run check-types && pnpm run lint && node esbuild.js --production && vite build --mode production",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
+    "vsce:package": "vsce package --no-dependencies",
+    "vsce:publish": "vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
@@ -205,6 +230,7 @@
     "@typescript-eslint/parser": "^8.47.0",
     "@vitejs/plugin-react": "^5.1.1",
     "@vscode/test-web": "^0.0.69",
+    "@vscode/vsce": "^3.7.0",
     "assert": "^2.1.0",
     "esbuild": "^0.25.12",
     "eslint": "^9.39.1",

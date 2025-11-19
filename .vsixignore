@@ -1,0 +1,57 @@
+# This file is used by vsce to ignore files when packaging the extension
+
+# Similar to .vscodeignore but specifically for .vsix packaging
+
+# Source files
+
+src/\*_
+\*\*/_.ts
+!dist/\*_/_.d.ts
+
+# Config files
+
+tsconfig.json
+tsconfig.app.json
+eslint.config.mjs
+vite.config.ts
+components.json
+esbuild.js
+
+# Documentation (keep README.md and CHANGELOG.md)
+
+docs/\*\*
+CLAUDE.md
+INTEGRATION_REPORT.md
+KOA_INTEGRATION.md
+USAGE.md
+VITE_REACT_SETUP.md
+vsc-extension-quickstart.md
+
+# Test files
+
+test-server.js
+**/test/** \*_/_.test.ts
+
+# Build artifacts
+
+out/**
+\*.vsix
+**/\*.map
+
+# Dependencies
+
+node_modules/\*\*
+pnpm-lock.yaml
+
+# Development files
+
+.vscode-test-web/**
+.vscode/**
+.git/**
+.github/**
+.gitignore
+
+# Web development files
+
+index.html
+app/\*\*
