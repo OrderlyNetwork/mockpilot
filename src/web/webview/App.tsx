@@ -5,6 +5,7 @@ import { MockEditor } from "../components/MockEditor";
 import { ServerStatus } from "../components/ServerStatus";
 import { MockApi } from "../types/mockApi";
 import { MockApiConfig } from "../types";
+import { postMessageToExtension } from "../utils/vscode";
 import "./styles.css";
 
 interface AppProps {}
@@ -45,12 +46,7 @@ export const App: React.FC<AppProps> = () => {
     window.addEventListener("message", handleMessage);
 
     // 通知扩展WebView已准备就绪
-    const vscode = (window as any).acquireVsCodeApi?.();
-    if (vscode) {
-      vscode.postMessage({ type: "ready" });
-    } else {
-      window.parent?.postMessage({ type: "ready" }, "*");
-    }
+    postMessageToExtension({ type: "ready" });
 
     return () => {
       window.removeEventListener("message", handleMessage);
@@ -59,80 +55,41 @@ export const App: React.FC<AppProps> = () => {
 
   const handleApiSelect = (api: MockApi) => {
     setSelectedApi(api);
-    const vscode = (window as any).acquireVsCodeApi?.();
-    if (vscode) {
-      vscode.postMessage({
-        type: "apiSelected",
-        api: api,
-      });
-    } else {
-      window.parent?.postMessage(
-        {
-          type: "apiSelected",
-          api: api,
-        },
-        "*"
-      );
-    }
+    postMessageToExtension({
+      type: "apiSelected",
+      api: api,
+    });
   };
 
   const handleApiUpdate = (api: MockApi) => {
-    const vscode = (window as any).acquireVsCodeApi?.();
-    if (vscode) {
-      vscode.postMessage({
-        type: "apiUpdated",
-        api: api,
-      });
-    } else {
-      window.parent?.postMessage(
-        {
-          type: "apiUpdated",
-          api: api,
-        },
-        "*"
-      );
-    }
+    postMessageToExtension({
+      type: "apiUpdated",
+      api: api,
+    });
   };
 
   const handleServerToggle = () => {
-    const vscode = (window as any).acquireVsCodeApi?.();
-    if (vscode) {
-      vscode.postMessage({
-        type: "toggleServer",
-      });
-    } else {
-      window.parent?.postMessage(
-        {
-          type: "toggleServer",
-        },
-        "*"
-      );
-    }
+    postMessageToExtension({
+      type: "toggleServer",
+    });
   };
 
   const handleMockEditorSave = (config: MockApiConfig, filePath: string) => {
-    const vscode = (window as any).acquireVsCodeApi?.();
-    if (vscode) {
-      vscode.postMessage({
-        type: "saveConfig",
-        config: config,
-        filePath: filePath,
-      });
-    } else {
-      window.parent?.postMessage(
-        {
-          type: "saveConfig",
-          config: config,
-          filePath: filePath,
-        },
-        "*"
-      );
-    }
+    postMessageToExtension({
+      type: "saveConfig",
+      config: config,
+      filePath: filePath,
+    });
   };
 
   // If in mock editor mode, render the MockEditor component
   if (isMockEditorMode && mockEditorConfig) {
-    return <MockApiPanel />;
+    return (
+      <MockApiPanel
+        initialConfig={mockEditorConfig}
+        initialFilePath={mockEditorFilePath}
+      />
+    );
   }
 
   // Otherwise, render the regular app interface
