@@ -1,0 +1,30 @@
+name: Test Active Rule
+description: Test activeRuleIndex functionality
+method: GET
+endpoint: /api/test-active
+activeRuleIndex: 1
+rules:
+  - name: Rule 0 - Should NOT be used
+    status: 200
+    headers:
+      Content-Type: application/json
+    body:
+      message: "This is rule 0"
+      active: false
+    delay: 0
+  - name: Rule 1 - Should be ACTIVE
+    status: 201
+    headers:
+      Content-Type: application/json
+    body:
+      message: "This is rule 1 - ACTIVE"
+      active: true
+    delay: 0
+  - name: Rule 2 - Should NOT be used
+    status: 202
+    headers:
+      Content-Type: application/json
+    body:
+      message: "This is rule 2"
+      active: false
+    delay: 0

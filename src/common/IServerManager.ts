@@ -2,7 +2,7 @@
  * Server Manager Interface - Shared interface for both Desktop and Web versions
  */
 
-import { MockApiConfig } from "../web/types";
+import { MockApiConfig } from "../types";
 
 export interface IServerManager {
   /**

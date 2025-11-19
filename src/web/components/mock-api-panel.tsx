@@ -14,6 +14,7 @@ interface ApiConfig {
   responseType: string;
   method: string;
   endpoint: string;
+  activeRuleIndex: number;
   rules: Rule[];
 }
 
@@ -34,6 +35,7 @@ export function MockApiPanel({
 
   // Convert MockApiConfig to ApiConfig helper function
   const convertToApiConfig = (loadedConfig: MockApiConfig): ApiConfig => {
+    const activeIndex = (loadedConfig as any).activeRuleIndex ?? 0;
     const convertedRules: Rule[] = (loadedConfig.rules || []).map(
       (rule, index) => ({
         id: String(index + 1),
@@ -45,7 +47,7 @@ export function MockApiPanel({
             ? rule.body
             : JSON.stringify(rule.body, null, 2),
         delay: rule.delay || 0,
-        isActive: index === 0, // First rule is active by default
+        isActive: index === activeIndex,
       })
     );
 
@@ -55,6 +57,7 @@ export function MockApiPanel({
       responseType: loadedConfig.responseType || "",
       method: loadedConfig.method,
       endpoint: loadedConfig.endpoint,
+      activeRuleIndex: activeIndex,
       rules: convertedRules,
     };
   };
@@ -68,6 +71,7 @@ export function MockApiPanel({
           responseType: "",
           method: "GET",
           endpoint: "",
+          activeRuleIndex: 0,
           rules: [],
         }
   );
@@ -155,10 +159,34 @@ export function MockApiPanel({
   };
 
   const setActiveRule = (id: string) => {
-    setConfig((prev) => ({
-      ...prev,
-      rules: prev.rules.map((r) => ({ ...r, isActive: r.id === id })),
-    }));
+    setConfig((prev) => {
+      const index = prev.rules.findIndex((r) => r.id === id);
+      const updatedRules = prev.rules.map((r) => ({
+        ...r,
+        isActive: r.id === id,
+      }));
+      const selectedRule = updatedRules[index];
+
+      // Persist locally for UI
+      const nextState = {
+        ...prev,
+        activeRuleIndex: index >= 0 ? index : 0,
+        rules: updatedRules,
+      };
+
+      // Notify extension to update active rule immediately
+      if (index >= 0 && selectedRule) {
+        postMessageToExtension({
+          type: "setActiveRule",
+          method: nextState.method,
+          endpoint: nextState.endpoint,
+          activeRuleIndex: index,
+          ruleName: selectedRule.name,
+        });
+      }
+
+      return nextState;
+    });
   };
 
   const saveConfigToFile = (configToSave: ApiConfig) => {
@@ -188,12 +216,18 @@ export function MockApiPanel({
     }
 
     // Convert ApiConfig back to MockApiConfig format
-    const mockApiConfig: MockApiConfig = {
+    const activeIndex = Math.max(
+      0,
+      configToSave.rules.findIndex((r) => r.isActive)
+    );
+
+    const mockApiConfig: any = {
       name: configToSave.name,
       description: configToSave.description,
       responseType: configToSave.responseType,
       method: configToSave.method as any,
       endpoint: configToSave.endpoint,
+      activeRuleIndex: activeIndex,
       rules: configToSave.rules.map((rule) => {
         // Parse body if it's a JSON string
         let parsedBody: any;

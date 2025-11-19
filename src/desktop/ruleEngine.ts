@@ -2,7 +2,7 @@
  * Rule Engine - Advanced rule matching for mock responses
  */
 
-import { MockRule } from "../web/types";
+import { MockRule } from "../types";
 
 export interface MatchContext {
   method: string;

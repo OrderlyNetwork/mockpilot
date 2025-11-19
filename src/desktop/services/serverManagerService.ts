@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { MockServer } from "../mockServer";
-import { MockApiConfig } from "../../web/types";
-import { parseYamlConfig } from "../../web/utils/yamlParser";
+import { MockApiConfig } from "../../types";
+import { parseYamlConfig } from "../../utils/yamlParser";
 import { IServerManager } from "../../common/IServerManager";
-import { LogOutputService } from "../../web/services/logOutputService";
+import { LogOutputService } from "../../services/logOutputService";
 
 /**
  * Service for managing the Mock Server instance and configurations (Desktop Version)

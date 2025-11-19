@@ -7,9 +7,9 @@ import Router from "@koa/router";
 import cors from "@koa/cors";
 import bodyParser from "koa-bodyparser";
 import { Server } from "http";
-import { MockApiConfig, MockRule } from "../web/types";
+import { MockApiConfig, MockRule } from "../types";
 import { RuleEngine } from "./ruleEngine";
-import { LogOutputService } from "../web/services/logOutputService";
+import { LogOutputService } from "../services/logOutputService";
 
 export interface ServerConfig {
   port: number;
@@ -164,31 +164,76 @@ export class MockServer {
     // Register each route
     this.routes.forEach((routeList, key) => {
       routeList.forEach((route) => {
-        const { method, endpoint, config } = route;
+        const { method, endpoint } = route;
 
-        // Register route handler
+        // Register route handler - dynamically get config to avoid closure issues
         const handler = async (ctx: Koa.Context) => {
-          const matchContext = {
-            method: ctx.method,
-            path: ctx.path,
-            query: ctx.query as Record<string, string>,
-            headers: ctx.headers as Record<string, string>,
-            body: ctx.request.body,
-          };
+          // Dynamically get the latest config from routes map
+          const currentKey = this.getRouteKey(ctx.method, ctx.path);
+          const currentRoutes = this.routes.get(currentKey);
 
-          // Find matching rule using RuleEngine
-          const rule = RuleEngine.findMatchingRule(
-            config.rules || [],
-            matchContext
-          );
+          if (!currentRoutes || currentRoutes.length === 0) {
+            ctx.status = 404;
+            ctx.body = { error: `Route not found: ${ctx.method} ${ctx.path}` };
+            return;
+          }
+
+          const config = currentRoutes[0].config;
+
+          // Use the active rule based on activeRuleIndex
+          const activeRuleIndex = config.activeRuleIndex ?? 0;
+          let rule: MockRule | undefined;
+
+          // First try to use the activeRuleIndex
+          if (config.rules && config.rules.length > activeRuleIndex) {
+            rule = config.rules[activeRuleIndex];
+            this.logger.info(
+              `[HTTP] Using active rule "${rule.name}" (index: ${activeRuleIndex}) for ${method} ${ctx.path}`
+            );
+          } else {
+            // Fallback to RuleEngine matching if activeRuleIndex is invalid
+            const matchContext = {
+              method: ctx.method,
+              path: ctx.path,
+              query: ctx.query as Record<string, string>,
+              headers: ctx.headers as Record<string, string>,
+              body: ctx.request.body,
+            };
+            rule =
+              RuleEngine.findMatchingRule(config.rules || [], matchContext) ||
+              undefined;
+            if (rule) {
+              const ruleIndex = config.rules?.indexOf(rule) ?? -1;
+              this.logger.info(
+                `[HTTP] Using matched rule "${rule.name}" (index: ${ruleIndex}) for ${method} ${ctx.path}`
+              );
+            }
+          }
 
           if (!rule) {
+            this.logger.warn(
+              `[HTTP] No rule found for ${method} ${
+                ctx.path
+              } (activeRuleIndex: ${activeRuleIndex}, total rules: ${
+                config.rules?.length || 0
+              })`
+            );
             ctx.status = 404;
             ctx.body = {
               error: `No matching rule found for ${method} ${endpoint}`,
             };
             return;
           }
+
+          // Log final chosen rule details
+          const finalIndex = config.rules?.indexOf(rule) ?? -1;
+          this.logger.info(
+            `[HTTP response] ${method.toUpperCase()} ${ctx.path} -> rule="${
+              rule.name
+            }" index=${finalIndex} activeRuleIndex=${activeRuleIndex} status=${
+              rule.status
+            } delay=${rule.delay || 0}`
+          );
 
           // Apply delay if specified
           if (rule.delay && rule.delay > 0) {
@@ -229,7 +274,7 @@ export class MockServer {
         this.logger.logRouteRegistration(
           method.toUpperCase(),
           endpoint,
-          config.name
+          route.config.name
         );
       });
     });
@@ -267,6 +312,14 @@ export class MockServer {
       endpoint: config.endpoint,
       config,
     });
+
+    this.logger.info(
+      `[registerRoute] ${config.method} ${
+        config.endpoint
+      } registered with activeRuleIndex: ${
+        config.activeRuleIndex ?? 0
+      }, total rules: ${config.rules?.length ?? 0}`
+    );
 
     // If server is running, reload routes
     if (this.isRunning) {
@@ -317,7 +370,14 @@ export class MockServer {
    */
   public reloadRoutes(configs: MockApiConfig[]): void {
     this.routes.clear();
-    configs.forEach((config) => this.registerRoute(config));
+    configs.forEach((config) => {
+      this.logger.info(
+        `[reloadRoutes] Registering ${config.method} ${
+          config.endpoint
+        } with activeRuleIndex: ${config.activeRuleIndex ?? 0}`
+      );
+      this.registerRoute(config);
+    });
 
     // If server is running, reload routes
     if (this.isRunning) {
@@ -362,15 +422,35 @@ export class MockServer {
     const route = routes[0];
     const config = route.config;
 
-    const matchContext = {
-      method,
-      path,
-      query: {},
-      headers,
-      body,
-    };
+    // Use the active rule based on activeRuleIndex
+    const activeRuleIndex = config.activeRuleIndex ?? 0;
+    let rule: MockRule | undefined;
 
-    const rule = RuleEngine.findMatchingRule(config.rules || [], matchContext);
+    // First try to use the activeRuleIndex
+    if (config.rules && config.rules.length > activeRuleIndex) {
+      rule = config.rules[activeRuleIndex];
+      this.logger.info(
+        `Using active rule "${rule.name}" (index: ${activeRuleIndex}) for ${method} ${path}`
+      );
+    } else {
+      // Fallback to RuleEngine matching if activeRuleIndex is invalid
+      const matchContext = {
+        method,
+        path,
+        query: {},
+        headers,
+        body,
+      };
+      rule =
+        RuleEngine.findMatchingRule(config.rules || [], matchContext) ||
+        undefined;
+      if (rule) {
+        const ruleIndex = config.rules?.indexOf(rule) ?? -1;
+        this.logger.info(
+          `Using matched rule "${rule.name}" (index: ${ruleIndex}) for ${method} ${path}`
+        );
+      }
+    }
 
     if (!rule) {
       return {
@@ -378,6 +458,37 @@ export class MockServer {
         headers: { "Content-Type": "application/json" },
         body: { error: `No matching rule found` },
       };
+    }
+
+    // Log final chosen rule details (active or matched)
+    const finalIndex = config.rules?.indexOf(rule) ?? -1;
+    this.logger.info(
+      `[response] ${method.toUpperCase()} ${path} -> rule="${
+        rule.name
+      }" index=${finalIndex} activeRuleIndex=${activeRuleIndex} status=${
+        rule.status
+      } delay=${rule.delay || 0}`
+    );
+    if (rule.headers) {
+      this.logger.info(
+        `[response headers] ${Object.entries(rule.headers)
+          .map(([k, v]) => `${k}=${v}`)
+          .join("; ")}`
+      );
+    }
+    // For large bodies avoid spamming logs; stringify safely
+    try {
+      const bodyPreview =
+        typeof rule.body === "string"
+          ? rule.body.slice(0, 300)
+          : JSON.stringify(rule.body).slice(0, 300);
+      this.logger.info(
+        `[response body preview] ${bodyPreview}${
+          bodyPreview.length >= 300 ? "…" : ""
+        }`
+      );
+    } catch {
+      // ignore body preview errors
     }
 
     if (rule.delay && rule.delay > 0) {

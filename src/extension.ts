@@ -1,13 +1,13 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { MockExplorerProvider } from "./web/mockExplorer";
-import { MockEditorProvider } from "./web/mockEditorProvider";
-import { StatusBarService } from "./web/services/statusBarService";
+import { MockExplorerProvider } from "./providers/mockExplorer";
+import { MockEditorProvider } from "./providers/mockEditorProvider";
+import { StatusBarService } from "./services/statusBarService";
 import { ServerManagerService } from "./desktop/services/serverManagerService";
-import { CommandService } from "./web/services/commandService";
-import { FileWatcherService } from "./web/services/fileWatcherService";
-import { LogOutputService } from "./web/services/logOutputService";
+import { CommandService } from "./services/commandService";
+import { FileWatcherService } from "./services/fileWatcherService";
+import { LogOutputService } from "./services/logOutputService";
 
 // This method is called when your extension is activated (Desktop version)
 // Your extension is activated the very first time the command is executed
