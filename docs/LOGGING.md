@@ -1,6 +1,6 @@
-# Mock Server Logging
+# MockPilot Logging
 
-The Mock Server extension now outputs all logs to VS Code's OUTPUT panel for easy monitoring and debugging.
+The MockPilot extension now outputs all logs to VS Code's OUTPUT panel for easy monitoring and debugging.
 
 ## Features
 
@@ -16,7 +16,7 @@ The Mock Server extension now outputs all logs to VS Code's OUTPUT panel for eas
 1. **Using the Command Palette**:
 
    - Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
-   - Type "Mock Server: Show Logs"
+   - Type "MockPilot: Show Logs"
    - Press Enter
 
 2. **Using the Mock Explorer**:
@@ -25,19 +25,19 @@ The Mock Server extension now outputs all logs to VS Code's OUTPUT panel for eas
 
 3. **Using the VS Code Panel**:
    - Go to View → Output
-   - Select "Mock Server" from the dropdown
+   - Select "MockPilot" from the dropdown
 
 ### Clear Logs
 
 1. **Using the Command Palette**:
 
    - Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
-   - Type "Mock Server: Clear Logs"
+   - Type "MockPilot: Clear Logs"
    - Press Enter
 
 2. **Manually**:
    - Open the OUTPUT panel
-   - Select "Mock Server" from the dropdown
+   - Select "MockPilot" from the dropdown
    - Click the "Clear Output" icon in the panel toolbar
 
 ## Log Types

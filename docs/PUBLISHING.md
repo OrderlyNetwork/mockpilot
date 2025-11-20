@@ -1,6 +1,6 @@
 # 发布 VS Code 扩展指南
 
-本指南将帮助你将 Mock Server 扩展发布到 Visual Studio Code Marketplace。
+本指南将帮助你将 MockPilot 扩展发布到 Visual Studio Code Marketplace.
 
 ## 📋 前置准备
 

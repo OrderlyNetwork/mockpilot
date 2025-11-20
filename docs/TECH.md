@@ -1,8 +1,8 @@
-# VS Code Mock Server 插件 - 技术设计文档（TECH.md）
+# MockPilot - 技术设计文档（TECH.md）
 
 ## 1. 总览（High Level Summary）
 
-目标是实现一个可嵌入 VS Code 的 Mock Server 插件，具备：
+目标是实现一个可嵌入 VS Code 的 MockPilot 插件，具备：
 
 - 从项目根 `.mock/` 目录加载 YAML 配置（每个 API 一个 YAML）
 - 在 Sidebar 展示并管理这些 YAML

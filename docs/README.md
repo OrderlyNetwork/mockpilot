@@ -1,6 +1,6 @@
-# Mock Server Landing Page
+# MockPilot Landing Page
 
-This folder contains the landing page for the VS Code Mock Server plugin. GitLab Pages can serve the contents of `docs/` directly.
+This folder contains the landing page for the MockPilot VS Code plugin. GitLab Pages can serve the contents of `docs/` directly.
 
 Files:
 

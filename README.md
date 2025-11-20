@@ -1,11 +1,11 @@
-# Mock Server - VS Code Extension
+# MockPilot - VS Code Extension
 
 A powerful and intuitive Mock API Server extension for VS Code that helps developers quickly create, manage, and test mock APIs directly within their development environment.
 
 ## ✨ Features
 
 - 📁 **YAML-based Configuration** - Simple, version-controllable mock API definitions
-- 🚀 **One-Click Server Control** - Start/stop mock server from Status Bar
+- 🚀 **One-Click Server Control** - Start/stop MockPilot server from Status Bar
 - 🔄 **Hot Reload** - Automatic reload when configuration files change
 - 🎯 **Visual Editor** - User-friendly WebView interface for editing mock APIs
 - 📊 **Real-time Status** - Server status display in VS Code Status Bar
@@ -19,7 +19,7 @@ A powerful and intuitive Mock API Server extension for VS Code that helps develo
 
 2. **Create `.mock` directory** in your project root:
 
-   - Use Command Palette: `Mock Server: Create .mock Directory`
+   - Use Command Palette: `MockPilot: Create .mock Directory`
    - Or manually: `mkdir .mock`
 
 3. **Create a mock API configuration** (e.g., `.mock/get_user.yaml`):
@@ -43,8 +43,8 @@ rules:
 
 4. **Start the server**:
 
-   - Click the Status Bar item: `Mock Server: Stopped`
-   - Or use Command Palette: `Mock Server: Start Server`
+   - Click the Status Bar item: `MockPilot: Stopped`
+   - Or use Command Palette: `MockPilot: Start Server`
 
 5. **Test your API**:
 
@@ -72,19 +72,19 @@ Configure the extension in VS Code settings:
 
 Access via Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`):
 
-- `Mock Server: Start Server` - Start the mock server
-- `Mock Server: Stop Server` - Stop the mock server
-- `Mock Server: Toggle Server` - Toggle server on/off
-- `Mock Server: Reload Server` - Reload all configurations
-- `Mock Server: Create .mock Directory` - Create mock config directory
-- `Mock Server: Test Mock API` - Test a specific API endpoint
+- `MockPilot: Start Server` - Start the mock server
+- `MockPilot: Stop Server` - Stop the mock server
+- `MockPilot: Toggle Server` - Toggle server on/off
+- `MockPilot: Reload Server` - Reload all configurations
+- `MockPilot: Create .mock Directory` - Create mock config directory
+- `MockPilot: Test Mock API` - Test a specific API endpoint
 
 ## 🎯 Status Bar Integration
 
 The extension adds a Status Bar item showing the server status:
 
-- **Stopped**: `$(debug-stop) Mock Server: Stopped` (yellow background)
-- **Running**: `$(server-process) Mock Server: Running (5)` - showing route count
+- **Stopped**: `$(debug-stop) MockPilot: Stopped` (yellow background)
+- **Running**: `$(server-process) MockPilot: Running (5)` - showing route count
 
 Click the Status Bar item to quickly start/stop the server.
 
@@ -150,20 +150,13 @@ pnpm test
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
 
+## Roadmap
+
+[] Mock RPC Server
+
 ## 📄 License
 
 MIT License
-
-## 🗺️ Roadmap
-
-- [ ] Advanced rule matching (query, header, body conditions)
-- [ ] CORS configuration support
-- [ ] HTTPS support
-- [ ] Request log viewer
-- [ ] Mock data generator
-- [ ] Import from Postman/Swagger
-- [ ] Response templating
-- [ ] GraphQL mock support
 
 ## 💡 Use Cases
 

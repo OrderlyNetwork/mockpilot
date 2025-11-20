@@ -1,6 +1,6 @@
 {
-  "name": "mock-server",
-  "displayName": "Mock Server",
+  "name": "mockpilot",
+  "displayName": "MockPilot",
   "description": "Visual Mock API Server for VS Code",
   "version": "0.0.1",
   "publisher": "your-publisher-name",
@@ -42,7 +42,7 @@
       "activitybar": [
         {
           "id": "mock-server",
-          "title": "Mock Server",
+          "title": "MockPilot",
           "icon": "$(server)"
         }
       ]
@@ -85,49 +85,49 @@
       },
       {
         "command": "mock-server.toggleServer",
-        "title": "Mock Server: Toggle Server"
+        "title": "MockPilot: Toggle Server"
       },
       {
         "command": "mock-server.startServer",
-        "title": "Mock Server: Start Server",
+        "title": "MockPilot: Start Server",
         "icon": "$(play)"
       },
       {
         "command": "mock-server.stopServer",
-        "title": "Mock Server: Stop Server",
+        "title": "MockPilot: Stop Server",
         "icon": "$(debug-stop)"
       },
       {
         "command": "mock-server.reloadServer",
-        "title": "Mock Server: Reload Server",
+        "title": "MockPilot: Reload Server",
         "icon": "$(refresh)"
       },
       {
         "command": "mock-server.getServerStatus",
-        "title": "Mock Server: Get Server Status"
+        "title": "MockPilot: Get Server Status"
       },
       {
         "command": "mock-server.testMockApi",
-        "title": "Mock Server: Test Mock API"
+        "title": "MockPilot: Test Mock API"
       },
       {
         "command": "mock-server.showLogs",
-        "title": "Mock Server: Show Logs",
+        "title": "MockPilot: Show Logs",
         "icon": "$(output)"
       },
       {
         "command": "mock-server.clearLogs",
-        "title": "Mock Server: Clear Logs",
+        "title": "MockPilot: Clear Logs",
         "icon": "$(clear-all)"
       },
       {
         "command": "mock-server.installSkills",
-        "title": "Mock Server: Install Skills",
+        "title": "MockPilot: Install Skills",
         "icon": "$(cloud-download)"
       }
     ],
     "configuration": {
-      "title": "Mock Server",
+      "title": "MockPilot",
       "properties": {
         "mockServer.port": {
           "type": "number",
