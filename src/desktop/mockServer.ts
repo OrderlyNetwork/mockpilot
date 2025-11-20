@@ -1,5 +1,6 @@
 /**
  * Mock Server - Real HTTP server using Koa.js for VS Code Desktop Extension
+ * Refactored: single config per route; dynamic rule selection helpers; stable router middleware.
  */
 
 import Koa from "koa";
@@ -16,17 +17,12 @@ export interface ServerConfig {
   mockDirectory: string;
 }
 
-export interface MockRoute {
-  method: string;
-  endpoint: string;
-  config: MockApiConfig;
-}
-
 export class MockServer {
   private app: Koa;
   private router: Router;
   private server: Server | null = null;
-  private routes: Map<string, MockRoute[]> = new Map();
+  private routes: Map<string, MockApiConfig> = new Map();
+  private registeredRouteKeys: Set<string> = new Set();
   private isRunning: boolean = false;
   private port: number;
   private mockDirectory: string;
@@ -44,29 +40,19 @@ export class MockServer {
     this.logger = LogOutputService.getInstance();
     this.app = new Koa();
     this.router = new Router();
-
-    // Setup middleware
     this.setupMiddleware();
   }
 
-  /**
-   * Setup Koa middleware
-   */
   private setupMiddleware(): void {
-    // Error handling
     this.app.use(async (ctx, next) => {
       try {
         await next();
       } catch (err: any) {
         ctx.status = err.status || 500;
-        ctx.body = {
-          error: err.message || "Internal Server Error",
-        };
+        ctx.body = { error: err.message || "Internal Server Error" };
         this.logger.error("Error handling request", err);
       }
     });
-
-    // CORS
     this.app.use(
       cors({
         origin: "*",
@@ -74,24 +60,16 @@ export class MockServer {
         allowHeaders: ["Content-Type", "Authorization"],
       })
     );
-
-    // Body parser
     this.app.use(bodyParser());
-
-    // Request logging
     this.app.use(async (ctx, next) => {
       const start = Date.now();
       await next();
       const ms = Date.now() - start;
       this.logger.logRequest(ctx.method, ctx.url, ctx.status, ms);
-
       this.logRequest(ctx.method, ctx.url, ctx.status);
     });
   }
 
-  /**
-   * Start the mock server
-   */
   public start(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.isRunning) {
@@ -99,24 +77,16 @@ export class MockServer {
         resolve();
         return;
       }
-
       try {
-        // Setup routes before starting
         this.setupRoutes();
-
-        // Apply router middleware
         this.app.use(this.router.routes());
         this.app.use(this.router.allowedMethods());
-
-        // Start server
         this.server = this.app.listen(this.port, () => {
           this.isRunning = true;
-          const routeCount = this.getRouteCount();
-          this.logger.logServerStart(this.port, routeCount);
+          this.logger.logServerStart(this.port, this.getRouteCount());
           this.logger.info(`📁 Mock directory: ${this.mockDirectory}`);
           resolve();
         });
-
         this.server.on("error", (err: any) => {
           if (err.code === "EADDRINUSE") {
             reject(new Error(`Port ${this.port} is already in use`));
@@ -130,9 +100,6 @@ export class MockServer {
     });
   }
 
-  /**
-   * Stop the mock server
-   */
   public stop(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.isRunning || !this.server) {
@@ -140,7 +107,6 @@ export class MockServer {
         resolve();
         return;
       }
-
       this.server.close((err) => {
         if (err) {
           reject(err);
@@ -154,252 +120,183 @@ export class MockServer {
     });
   }
 
-  /**
-   * Setup Koa router with all registered routes
-   */
   private setupRoutes(): void {
-    // Create a new router instance
-    this.router = new Router();
-
-    // Register each route
-    this.routes.forEach((routeList, key) => {
-      routeList.forEach((route) => {
-        const { method, endpoint } = route;
-
-        // Register route handler - dynamically get config to avoid closure issues
-        const handler = async (ctx: Koa.Context) => {
-          // Dynamically get the latest config from routes map
-          const currentKey = this.getRouteKey(ctx.method, ctx.path);
-          const currentRoutes = this.routes.get(currentKey);
-
-          if (!currentRoutes || currentRoutes.length === 0) {
-            ctx.status = 404;
-            ctx.body = { error: `Route not found: ${ctx.method} ${ctx.path}` };
-            return;
-          }
-
-          const config = currentRoutes[0].config;
-
-          // Use the active rule based on activeRuleIndex
-          const activeRuleIndex = config.activeRuleIndex ?? 0;
-          let rule: MockRule | undefined;
-
-          // First try to use the activeRuleIndex
-          if (config.rules && config.rules.length > activeRuleIndex) {
-            rule = config.rules[activeRuleIndex];
-            this.logger.info(
-              `[HTTP] Using active rule "${rule.name}" (index: ${activeRuleIndex}) for ${method} ${ctx.path}`
-            );
-          } else {
-            // Fallback to RuleEngine matching if activeRuleIndex is invalid
-            const matchContext = {
-              method: ctx.method,
-              path: ctx.path,
-              query: ctx.query as Record<string, string>,
-              headers: ctx.headers as Record<string, string>,
-              body: ctx.request.body,
-            };
-            rule =
-              RuleEngine.findMatchingRule(config.rules || [], matchContext) ||
-              undefined;
-            if (rule) {
-              const ruleIndex = config.rules?.indexOf(rule) ?? -1;
-              this.logger.info(
-                `[HTTP] Using matched rule "${rule.name}" (index: ${ruleIndex}) for ${method} ${ctx.path}`
-              );
-            }
-          }
-
-          if (!rule) {
-            this.logger.warn(
-              `[HTTP] No rule found for ${method} ${
-                ctx.path
-              } (activeRuleIndex: ${activeRuleIndex}, total rules: ${
-                config.rules?.length || 0
-              })`
-            );
-            ctx.status = 404;
-            ctx.body = {
-              error: `No matching rule found for ${method} ${endpoint}`,
-            };
-            return;
-          }
-
-          // Log final chosen rule details
-          const finalIndex = config.rules?.indexOf(rule) ?? -1;
-          this.logger.info(
-            `[HTTP response] ${method.toUpperCase()} ${ctx.path} -> rule="${
-              rule.name
-            }" index=${finalIndex} activeRuleIndex=${activeRuleIndex} status=${
-              rule.status
-            } delay=${rule.delay || 0}`
-          );
-
-          // Apply delay if specified
-          if (rule.delay && rule.delay > 0) {
-            await new Promise((resolve) => setTimeout(resolve, rule.delay));
-          }
-
-          // Set response
-          ctx.status = rule.status;
-          if (rule.headers) {
-            Object.entries(rule.headers).forEach(([key, value]) => {
-              ctx.set(key, value);
-            });
-          }
-          ctx.body = rule.body || {};
+    this.routes.forEach((config, key) =>
+      this.ensureRouteRegistered(key, config)
+    );
+    const healthKey = this.getRouteKey("GET", "/_health");
+    if (!this.registeredRouteKeys.has(healthKey)) {
+      this.router.get("/_health", (ctx) => {
+        ctx.body = {
+          status: "ok",
+          port: this.port,
+          routeCount: this.getRouteCount(),
+          timestamp: new Date().toISOString(),
         };
-
-        // Register route based on method
-        switch (method.toUpperCase()) {
-          case "GET":
-            this.router.get(endpoint, handler);
-            break;
-          case "POST":
-            this.router.post(endpoint, handler);
-            break;
-          case "PUT":
-            this.router.put(endpoint, handler);
-            break;
-          case "DELETE":
-            this.router.delete(endpoint, handler);
-            break;
-          case "PATCH":
-            this.router.patch(endpoint, handler);
-            break;
-          default:
-            this.logger.warn(`Unsupported HTTP method: ${method}`);
-        }
-
-        this.logger.logRouteRegistration(
-          method.toUpperCase(),
-          endpoint,
-          route.config.name
-        );
       });
-    });
-
-    // Add a health check endpoint
-    this.router.get("/_health", (ctx) => {
-      ctx.body = {
-        status: "ok",
-        port: this.port,
-        routeCount: this.getRouteCount(),
-        timestamp: new Date().toISOString(),
-      };
-    });
+      this.registeredRouteKeys.add(healthKey);
+    }
   }
 
-  /**
-   * Register a mock API route
-   */
+  private ensureRouteRegistered(key: string, config: MockApiConfig): void {
+    if (this.registeredRouteKeys.has(key)) {
+      return;
+    }
+    const { method, endpoint } = config;
+    const handler = async (ctx: Koa.Context) => {
+      const currentKey = this.getRouteKey(ctx.method, ctx.path);
+      const currentConfig = this.routes.get(currentKey);
+      if (!currentConfig) {
+        ctx.status = 404;
+        ctx.body = { error: `Route not found: ${ctx.method} ${ctx.path}` };
+        return;
+      }
+      const selection = this.selectRule(currentConfig, {
+        method: ctx.method,
+        path: ctx.path,
+        query: ctx.query as Record<string, string>,
+        headers: ctx.headers as Record<string, string>,
+        body: (ctx.request as any).body,
+      });
+      if (!selection.rule) {
+        this.logger.warn(
+          `[HTTP] No matching rule for ${ctx.method} ${
+            ctx.path
+          } (activeRuleIndex: ${
+            currentConfig.activeRuleIndex ?? 0
+          }, total rules: ${currentConfig.rules?.length || 0})`
+        );
+        ctx.status = 404;
+        ctx.body = {
+          error: `No matching rule found for ${ctx.method} ${ctx.path}`,
+        };
+        return;
+      }
+      await this.applyRule(ctx, selection.rule, currentConfig, selection);
+    };
+    switch (method.toUpperCase()) {
+      case "GET":
+        this.router.get(endpoint, handler);
+        break;
+      case "POST":
+        this.router.post(endpoint, handler);
+        break;
+      case "PUT":
+        this.router.put(endpoint, handler);
+        break;
+      case "DELETE":
+        this.router.delete(endpoint, handler);
+        break;
+      case "PATCH":
+        this.router.patch(endpoint, handler);
+        break;
+      default:
+        this.logger.warn(`Unsupported HTTP method: ${method}`);
+    }
+    this.registeredRouteKeys.add(key);
+    this.logger.logRouteRegistration(
+      method.toUpperCase(),
+      endpoint,
+      config.name
+    );
+  }
+
+  private selectRule(
+    config: MockApiConfig,
+    ctx: {
+      method: string;
+      path: string;
+      query: Record<string, string>;
+      headers: Record<string, string>;
+      body: any;
+    }
+  ): { rule?: MockRule; index: number; source: "active" | "matched" | "none" } {
+    const activeIndex = config.activeRuleIndex ?? 0;
+    if (config.rules && config.rules[activeIndex]) {
+      return {
+        rule: config.rules[activeIndex],
+        index: activeIndex,
+        source: "active",
+      };
+    }
+    const matched = RuleEngine.findMatchingRule(config.rules || [], ctx);
+    if (!matched) {
+      return { rule: undefined, index: -1, source: "none" };
+    }
+    return {
+      rule: matched,
+      index: config.rules?.indexOf(matched) ?? -1,
+      source: "matched",
+    };
+  }
+
+  private async applyRule(
+    ctx: Koa.Context,
+    rule: MockRule,
+    config: MockApiConfig,
+    selection: { index: number; source: string }
+  ): Promise<void> {
+    if (rule.delay && rule.delay > 0) {
+      await new Promise((r) => setTimeout(r, rule.delay));
+    }
+    ctx.status = rule.status;
+    Object.entries(rule.headers || {}).forEach(([k, v]) => ctx.set(k, v));
+    ctx.body = rule.body ?? {};
+    this.logger.info(
+      `[HTTP response] ${ctx.method} ${ctx.path} -> rule="${rule.name}" index=${
+        selection.index
+      } source=${selection.source} activeRuleIndex=${
+        config.activeRuleIndex ?? 0
+      } status=${rule.status} delay=${rule.delay || 0}`
+    );
+  }
+
   public registerRoute(config: MockApiConfig): void {
     const key = this.getRouteKey(config.method, config.endpoint);
-
-    if (!this.routes.has(key)) {
-      this.routes.set(key, []);
-    }
-
-    const routes = this.routes.get(key)!;
-    // Remove existing route with same config if exists
-    const index = routes.findIndex((r) => r.config.name === config.name);
-    if (index >= 0) {
-      routes.splice(index, 1);
-    }
-
-    routes.push({
-      method: config.method,
-      endpoint: config.endpoint,
-      config,
-    });
-
+    this.routes.set(key, config);
     this.logger.info(
-      `[registerRoute] ${config.method} ${
-        config.endpoint
-      } registered with activeRuleIndex: ${
+      `[registerRoute] ${config.method} ${config.endpoint} activeRuleIndex=${
         config.activeRuleIndex ?? 0
-      }, total rules: ${config.rules?.length ?? 0}`
+      } rules=${config.rules?.length ?? 0}`
     );
-
-    // If server is running, reload routes
     if (this.isRunning) {
-      this.setupRoutes();
-      // Re-apply router middleware
-      this.app.use(this.router.routes());
-      this.app.use(this.router.allowedMethods());
+      this.ensureRouteRegistered(key, config);
     }
   }
 
-  /**
-   * Unregister a mock API route
-   */
   public unregisterRoute(
     method: string,
     endpoint: string,
-    name?: string
+    _name?: string
   ): void {
     const key = this.getRouteKey(method, endpoint);
-
-    if (!this.routes.has(key)) {
-      return;
-    }
-
-    if (name) {
-      const routes = this.routes.get(key)!;
-      const index = routes.findIndex((r) => r.config.name === name);
-      if (index >= 0) {
-        routes.splice(index, 1);
-        if (routes.length === 0) {
-          this.routes.delete(key);
-        }
-      }
-    } else {
-      this.routes.delete(key);
-    }
-
-    this.logger.logRouteUnregistration(method, endpoint, name);
-
-    // If server is running, reload routes
-    if (this.isRunning) {
-      this.setupRoutes();
-    }
+    this.routes.delete(key);
+    this.logger.logRouteUnregistration(method, endpoint, undefined);
   }
 
-  /**
-   * Reload all routes
-   */
   public reloadRoutes(configs: MockApiConfig[]): void {
     this.routes.clear();
     configs.forEach((config) => {
+      const key = this.getRouteKey(config.method, config.endpoint);
+      this.routes.set(key, config);
       this.logger.info(
-        `[reloadRoutes] Registering ${config.method} ${
-          config.endpoint
-        } with activeRuleIndex: ${config.activeRuleIndex ?? 0}`
+        `[reloadRoutes] ${config.method} ${config.endpoint} activeRuleIndex=${
+          config.activeRuleIndex ?? 0
+        }`
       );
-      this.registerRoute(config);
+      if (this.isRunning) {
+        this.ensureRouteRegistered(key, config);
+      }
     });
-
-    // If server is running, reload routes
-    if (this.isRunning) {
-      this.setupRoutes();
-    }
-
     this.logger.logRouteReload(configs.length);
   }
 
-  /**
-   * Handle incoming request (for testing purposes)
-   */
   public async handleRequest(
     method: string,
     path: string,
     headers: Record<string, string> = {},
     body?: any
-  ): Promise<{
-    status: number;
-    headers: Record<string, string>;
-    body: any;
-  }> {
+  ): Promise<{ status: number; headers: Record<string, string>; body: any }> {
     if (!this.isRunning) {
       return {
         status: 503,
@@ -407,94 +304,33 @@ export class MockServer {
         body: { error: "Mock server is not running" },
       };
     }
-
     const key = this.getRouteKey(method, path);
-    const routes = this.routes.get(key);
-
-    if (!routes || routes.length === 0) {
+    const config = this.routes.get(key);
+    if (!config) {
       return {
         status: 404,
         headers: { "Content-Type": "application/json" },
         body: { error: `Route not found: ${method} ${path}` },
       };
     }
-
-    const route = routes[0];
-    const config = route.config;
-
-    // Use the active rule based on activeRuleIndex
-    const activeRuleIndex = config.activeRuleIndex ?? 0;
-    let rule: MockRule | undefined;
-
-    // First try to use the activeRuleIndex
-    if (config.rules && config.rules.length > activeRuleIndex) {
-      rule = config.rules[activeRuleIndex];
-      this.logger.info(
-        `Using active rule "${rule.name}" (index: ${activeRuleIndex}) for ${method} ${path}`
-      );
-    } else {
-      // Fallback to RuleEngine matching if activeRuleIndex is invalid
-      const matchContext = {
-        method,
-        path,
-        query: {},
-        headers,
-        body,
-      };
-      rule =
-        RuleEngine.findMatchingRule(config.rules || [], matchContext) ||
-        undefined;
-      if (rule) {
-        const ruleIndex = config.rules?.indexOf(rule) ?? -1;
-        this.logger.info(
-          `Using matched rule "${rule.name}" (index: ${ruleIndex}) for ${method} ${path}`
-        );
-      }
-    }
-
+    const selection = this.selectRule(config, {
+      method,
+      path,
+      query: {},
+      headers,
+      body,
+    });
+    const rule = selection.rule;
     if (!rule) {
       return {
         status: 404,
         headers: { "Content-Type": "application/json" },
-        body: { error: `No matching rule found` },
+        body: { error: "No matching rule found" },
       };
     }
-
-    // Log final chosen rule details (active or matched)
-    const finalIndex = config.rules?.indexOf(rule) ?? -1;
-    this.logger.info(
-      `[response] ${method.toUpperCase()} ${path} -> rule="${
-        rule.name
-      }" index=${finalIndex} activeRuleIndex=${activeRuleIndex} status=${
-        rule.status
-      } delay=${rule.delay || 0}`
-    );
-    if (rule.headers) {
-      this.logger.info(
-        `[response headers] ${Object.entries(rule.headers)
-          .map(([k, v]) => `${k}=${v}`)
-          .join("; ")}`
-      );
-    }
-    // For large bodies avoid spamming logs; stringify safely
-    try {
-      const bodyPreview =
-        typeof rule.body === "string"
-          ? rule.body.slice(0, 300)
-          : JSON.stringify(rule.body).slice(0, 300);
-      this.logger.info(
-        `[response body preview] ${bodyPreview}${
-          bodyPreview.length >= 300 ? "…" : ""
-        }`
-      );
-    } catch {
-      // ignore body preview errors
-    }
-
     if (rule.delay && rule.delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, rule.delay));
+      await new Promise((r) => setTimeout(r, rule.delay));
     }
-
     return {
       status: rule.status,
       headers: rule.headers || { "Content-Type": "application/json" },
@@ -502,9 +338,6 @@ export class MockServer {
     };
   }
 
-  /**
-   * Get server status
-   */
   public getStatus(): {
     running: boolean;
     port: number;
@@ -513,17 +346,13 @@ export class MockServer {
   } {
     const routes: Array<{ method: string; endpoint: string; name: string }> =
       [];
-
-    this.routes.forEach((routeList) => {
-      routeList.forEach((route) => {
-        routes.push({
-          method: route.method,
-          endpoint: route.endpoint,
-          name: route.config.name,
-        });
+    this.routes.forEach((config) => {
+      routes.push({
+        method: config.method,
+        endpoint: config.endpoint,
+        name: config.name,
       });
     });
-
     return {
       running: this.isRunning,
       port: this.port,
@@ -532,63 +361,31 @@ export class MockServer {
     };
   }
 
-  /**
-   * Get request logs
-   */
-  public getLogs(limit: number = 100): Array<{
-    timestamp: Date;
-    method: string;
-    path: string;
-    status: number;
-  }> {
+  public getLogs(
+    limit: number = 100
+  ): Array<{ timestamp: Date; method: string; path: string; status: number }> {
     return this.requestLog.slice(-limit);
   }
 
-  /**
-   * Clear request logs
-   */
   public clearLogs(): void {
     this.requestLog = [];
   }
 
-  /**
-   * Get route count
-   */
   private getRouteCount(): number {
-    let count = 0;
-    this.routes.forEach((routes) => {
-      count += routes.length;
-    });
-    return count;
+    return this.routes.size;
   }
 
-  /**
-   * Generate route key
-   */
   private getRouteKey(method: string, path: string): string {
     return `${method.toUpperCase()}:${path}`;
   }
 
-  /**
-   * Log request
-   */
   private logRequest(method: string, path: string, status: number): void {
-    this.requestLog.push({
-      timestamp: new Date(),
-      method,
-      path,
-      status,
-    });
-
-    // Keep only last 1000 logs
+    this.requestLog.push({ timestamp: new Date(), method, path, status });
     if (this.requestLog.length > 1000) {
       this.requestLog = this.requestLog.slice(-1000);
     }
   }
 
-  /**
-   * Check if server is running
-   */
   public isServerRunning(): boolean {
     return this.isRunning;
   }
