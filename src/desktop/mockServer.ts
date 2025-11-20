@@ -56,8 +56,29 @@ export class MockServer {
     this.app.use(
       cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization"],
+        allowMethods: [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE",
+          "PATCH",
+          "OPTIONS",
+          "HEAD",
+        ],
+        allowHeaders: [
+          "Content-Type",
+          "Authorization",
+          "X-Requested-With",
+          "Accept",
+          "Origin",
+          "orderly-key",
+          "orderly-account-id",
+          "orderly-timestamp",
+          "orderly-signature",
+        ],
+        exposeHeaders: ["Content-Length", "Content-Type"],
+        credentials: true,
+        maxAge: 86400, // 24 hours
       })
     );
     this.app.use(bodyParser());
