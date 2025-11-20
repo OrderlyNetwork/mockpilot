@@ -6,6 +6,7 @@ import { StatusBarService } from "./statusBarService";
 import { LogOutputService } from "./logOutputService";
 import { parseYamlConfig } from "../utils/yamlParser";
 import { MockApiConfig } from "../types";
+import { installSkills, parseSkillVersion } from "../utils/skillInstaller";
 
 /**
  * Service for registering and handling all extension commands
@@ -85,6 +86,12 @@ export class CommandService {
     this.registerCommand("mock-server.showLogs", this.showLogs.bind(this));
 
     this.registerCommand("mock-server.clearLogs", this.clearLogs.bind(this));
+
+    // Skill installation command
+    this.registerCommand(
+      "mock-server.installSkills",
+      this.installSkillsCommand.bind(this)
+    );
 
     // Legacy hello world command
     this.registerCommand("mock-server.helloWorld", () => {
@@ -523,5 +530,33 @@ rules:
     const logger = LogOutputService.getInstance();
     logger.clear();
     vscode.window.showInformationMessage("Mock Server logs cleared");
+  }
+
+  /**
+   * Install or update Mock Server skills to workspace
+   */
+  private async installSkillsCommand(): Promise<void> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      vscode.window.showWarningMessage(
+        "No workspace folder found. Please open a folder or workspace first."
+      );
+      return;
+    }
+
+    try {
+      const currentVersion = await parseSkillVersion(this.context.extensionUri);
+      await installSkills(
+        this.context,
+        workspaceFolders,
+        currentVersion,
+        false
+      );
+    } catch (error) {
+      const logger = LogOutputService.getInstance();
+      logger.error("Failed to install skills", error);
+      vscode.window.showErrorMessage(`Failed to install skills: ${error}`);
+    }
   }
 }

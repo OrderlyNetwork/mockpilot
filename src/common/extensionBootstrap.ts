@@ -6,6 +6,7 @@ import { MockExplorerProvider } from "../providers/mockExplorer";
 import { MockEditorProvider } from "../providers/mockEditorProvider";
 import { FileWatcherService } from "../services/fileWatcherService";
 import { CommandService } from "../services/commandService";
+import { checkAndPromptSkillInstallation } from "../utils/skillInstaller";
 
 export interface ExtensionContext {
   extensionUri: vscode.Uri;
@@ -25,9 +26,9 @@ export interface PlatformServices {
 export class ExtensionBootstrap {
   private statusBarService: StatusBarService;
   private logger: LogOutputService;
-  private platform: 'desktop' | 'web';
+  private platform: "desktop" | "web";
 
-  constructor(platform: 'desktop' | 'web') {
+  constructor(platform: "desktop" | "web") {
     this.platform = platform;
     this.statusBarService = new StatusBarService();
     this.logger = LogOutputService.getInstance();
@@ -38,13 +39,19 @@ export class ExtensionBootstrap {
    */
   async activate(context: vscode.ExtensionContext): Promise<void> {
     // Log platform-specific activation
-    const platformInfo = this.platform === 'desktop' ? 'Desktop Version' : 'Web Version';
+    const platformInfo =
+      this.platform === "desktop" ? "Desktop Version" : "Web Version";
     console.log(`Mock Server extension is now active! (${platformInfo})`);
     console.log("Extension context:", context.extensionUri);
     console.log(
       "Workspace folders:",
       vscode.workspace.workspaceFolders?.map((f) => f.name)
     );
+
+    // Check and prompt for skill installation/update (non-blocking)
+    checkAndPromptSkillInstallation(context).catch((error) => {
+      console.error("Skill installation check failed:", error);
+    });
 
     // Add status bar to subscriptions
     context.subscriptions.push(this.statusBarService.getStatusBarItem());
@@ -92,10 +99,13 @@ export class ExtensionBootstrap {
   /**
    * Create platform-specific services
    */
-  private createPlatformServices(context: vscode.ExtensionContext): PlatformServices {
-    const mockExplorerProvider = this.platform === 'desktop'
-      ? new (require("../providers/mockExplorer").MockExplorerProvider)()
-      : new (require("../web/mockExplorer").MockExplorerProvider)();
+  private createPlatformServices(
+    context: vscode.ExtensionContext
+  ): PlatformServices {
+    const mockExplorerProvider =
+      this.platform === "desktop"
+        ? new (require("../providers/mockExplorer").MockExplorerProvider)()
+        : new (require("../web/mockExplorer").MockExplorerProvider)();
 
     const mockEditorProvider = new MockEditorProvider(
       context.extensionUri,
@@ -104,13 +114,17 @@ export class ExtensionBootstrap {
 
     const serverManager = ServiceFactory.createServerManager(this.platform);
 
-    console.log(`${this.platform === 'desktop' ? 'Desktop' : 'Web'} MockExplorerProvider created`);
+    console.log(
+      `${
+        this.platform === "desktop" ? "Desktop" : "Web"
+      } MockExplorerProvider created`
+    );
     console.log("MockEditorProvider created");
 
     return {
       mockExplorerProvider,
       mockEditorProvider,
-      serverManager
+      serverManager,
     };
   }
 

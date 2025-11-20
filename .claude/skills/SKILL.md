@@ -1,15 +1,7 @@
 ---
 name: generate-api-mock-rules
+version: 1.0.0
 description: Generate mock API YAML files from API descriptions, TypeScript interfaces, OpenAPI specs, or natural language descriptions. Creates properly structured YAML files in the .mock directory following the project's specification. CRITICAL: Always generate comprehensive rules covering all edge cases and boundary conditions.
-examples: examples.md
-templates:
-  - templates/basic_api.yaml
-  - templates/get_collection.yaml
-  - templates/get_single.yaml
-  - templates/create.yaml
-  - templates/update.yaml
-  - templates/delete.yaml
-  - templates/auth_login.yaml
 ---
 
 # Generate API Mock Rules
@@ -45,25 +37,6 @@ Use these templates as starting points for common API patterns (located in `temp
 - **[auth_login.yaml](templates/auth_login.yaml)**: Authentication/login endpoint with comprehensive security scenarios
 
 > 💡 **See all template files**: Browse the [templates/](templates/) directory for the complete template collection.
-
-## YAML Structure Reference
-
-Each mock API file follows this structure:
-
-```yaml
-name: API Display Name
-description: Detailed description of what this API does
-method: GET|POST|PUT|DELETE|PATCH
-endpoint: /api/path
-rules:
-  - name: Rule Name
-    status: 200
-    headers:
-      Content-Type: application/json
-    body:
-      # Response body (can be object, array, string, etc.)
-    delay: 0 # milliseconds
-```
 
 ## Field Descriptions
 

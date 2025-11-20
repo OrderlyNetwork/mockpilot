@@ -26,7 +26,7 @@
     "rest"
   ],
   "engines": {
-    "vscode": "^1.106.0"
+    "vscode": "^1.75.0"
   },
   "categories": [
     "Testing",
@@ -119,6 +119,11 @@
         "command": "mock-server.clearLogs",
         "title": "Mock Server: Clear Logs",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "mock-server.installSkills",
+        "title": "Mock Server: Install Skills",
+        "icon": "$(cloud-download)"
       }
     ],
     "configuration": {
@@ -211,7 +216,7 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
-    "vsce:package": "vsce package --no-dependencies",
+    "vsce:package": "vsce package --no-dependencies --allow-star-activation",
     "vsce:publish": "vsce publish --no-dependencies"
   },
   "devDependencies": {
@@ -225,7 +230,7 @@
     "@types/mocha": "^10.0.10",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
-    "@types/vscode": "^1.106.1",
+    "@types/vscode": "^1.75.0",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "@vitejs/plugin-react": "^5.1.1",
