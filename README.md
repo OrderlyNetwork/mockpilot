@@ -12,7 +12,8 @@ A powerful and intuitive Mock API Server extension for VS Code that helps develo
 - 🧪 **Built-in Testing** - Test APIs directly from the editor
 - 📝 **Multiple Response Rules** - Support for different response scenarios
 - ⚡ **Zero Configuration** - Works out of the box with sensible defaults
-- 🤖 **AI-Powered Mock Generation** - Generate mock rules using Claude AI with natural language
+- 🤖 **AI-Powered Mock Generation** - Generate mock rules using your IDE's AI (Copilot, Cursor, etc.)
+- 🎯 **Claude Skill Auto-Installation** - Automatically installs a specialized Claude Skill for generating mock rules
 
 ## 🚀 Quick Start
 
@@ -89,7 +90,6 @@ Access via Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`):
 - `MockPilot: Reload Server` - Reload all configurations
 - `MockPilot: Create .mock Directory` - Create mock config directory
 - `MockPilot: Test Mock API` - Test a specific API endpoint
-- `MockPilot: Generate Mock with AI` - Generate mock rules using Claude AI
 
 ## 🎯 Status Bar Integration
 
@@ -129,73 +129,101 @@ No manual restart required!
 
 ## 🤖 AI-Powered Features
 
-MockPilot integrates with **Claude Skills** to provide intelligent mock API generation capabilities. This feature allows you to describe your API requirements in natural language and let AI generate the corresponding mock rules automatically.
+MockPilot is designed to work seamlessly with your IDE's AI capabilities (such as **GitHub Copilot**, **Cursor**, **Claude in VS Code**, etc.) to help you generate mock API configurations using natural language descriptions.
 
-### What are Claude Skills?
+**Special Feature**: When you install MockPilot, it automatically installs a dedicated **Claude Skill** that's specifically trained to generate mock API configurations following MockPilot's YAML format standards. This ensures optimal AI-generated outputs when using Claude.
 
-Claude Skills is a powerful AI integration that allows VS Code extensions to leverage Claude AI's capabilities directly within the development environment. MockPilot uses Claude Skills to understand your API requirements and generate accurate, well-structured mock configurations.
+### How It Works
 
-### How to Use AI to Generate Mock Rules
+Instead of providing a built-in AI command, MockPilot leverages your existing IDE AI tools. You simply describe your API requirements using a structured prompt template, and your AI assistant will generate the YAML configuration. MockPilot then manages and serves these mock APIs.
+
+### Using AI to Generate Mock Rules
 
 #### 1. **Prerequisites**
 
-- Install the Claude AI extension in VS Code (if required)
-- Ensure you have an active Claude API key configured
-- Open a project with MockPilot installed
+- Have an AI assistant enabled in your IDE:
+  - **VS Code**: GitHub Copilot, Claude, or other AI extensions
+  - **Cursor**: Built-in AI capabilities
+  - **Other IDEs**: Any AI coding assistant
+- MockPilot extension installed (includes auto-installed Claude Skill for Claude users)
+- A project with a `.mock` directory
 
-#### 2. **Generate Mock Rules with Natural Language**
+#### 2. **Using Claude Skill (Auto-Installed)**
 
-You can generate mock rules by simply describing what you need:
+If you're using Claude in VS Code, MockPilot automatically installs a specialized Claude Skill on first activation. This skill is optimized for generating MockPilot-compatible YAML configurations.
 
-**Example 1: Trading Positions API**
-
-```
-Create a GET endpoint for /v1/positions that returns trading positions with margin ratios, collateral info, and position details including symbol, quantity, price, and PnL
-```
-
-**Example 2: Complex E-commerce API**
+**Simply ask Claude:**
 
 ```
-Create a POST endpoint for /api/orders with the following scenarios:
-1. Success case: returns order ID, status, and total
-2. Invalid payment: returns 400 error
-3. Out of stock: returns 409 error with available quantity
+Generate a mock API for [your requirement]
 ```
 
-**Example 3: Authentication API**
+The skill understands MockPilot's format and will generate properly structured YAML configurations automatically.
+
+#### 3. **Prompt Template (For Other AI Assistants)**
+
+Use this template with your AI assistant to generate mock rules:
 
 ```
-Create mock rules for login endpoint:
-- POST /api/auth/login
-- Success: return JWT token and user info
-- Invalid credentials: return 401 error
-- Account locked: return 403 error
+Create a mock API YAML configuration with the following requirements:
+- Method: [GET/POST/PUT/DELETE/etc.]
+- Endpoint: [/api/path]
+- Description: [What this API does]
+- Response scenarios: [success, error cases, edge cases]
+- Data structure: [describe the expected response format]
+
+Format the output as a YAML file following this structure:
+name: [API Name]
+description: [API Description]
+method: [HTTP Method]
+endpoint: [API Path]
+rules:
+  - name: [Rule Name]
+    status: [HTTP Status Code]
+    headers:
+      Content-Type: application/json
+    body:
+      [response body]
+    delay: [milliseconds]
 ```
 
-#### 3. **Using the Command**
+#### 4. **Example Usage**
 
-1. Open Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`)
-2. Run: `MockPilot: Generate Mock with AI`
-3. Describe your API requirements in the input box
-4. AI will generate the YAML configuration automatically
-5. Review and save the generated mock rule
+**Prompt to your AI assistant:**
 
-#### 4. **AI Generation Features**
+```
+Create a mock API YAML configuration with the following requirements:
+- Method: GET
+- Endpoint: /v1/positions
+- Description: Get all trading positions information
+- Response scenarios:
+  1. Success with positions data
+  2. Success with empty positions
+- Data structure: Include margin ratios, collateral info, and position details with symbol, quantity, price, and PnL
+```
 
-The AI assistant can help you:
+#### 5. **Workflow**
 
-- **Generate Complete Mock APIs** - From endpoint definition to response bodies
-- **Create Multiple Rules** - Different scenarios (success, errors, edge cases)
-- **Generate Realistic Data** - Sample user data, product catalogs, etc.
-- **Handle Complex Structures** - Nested objects, arrays, and relationships
-- **Add Headers and Delays** - Simulate real-world API behavior
-- **Create RESTful Patterns** - Follow REST conventions automatically
+1. **Ask your AI assistant** using the prompt template above
+2. **AI generates the YAML** configuration based on your requirements
+3. **Save the file** in your `.mock` directory (e.g., `.mock/get_positions.yaml`)
+4. **MockPilot automatically detects** the new file and reloads
+5. **Test your API** immediately using the mock server
 
-#### 5. **Example Generated Output**
+#### 6. **AI Generation Capabilities**
 
-Given the prompt: "Create a GET endpoint for positions info at /v1/positions with success and empty positions cases"
+Your AI assistant can help you create:
 
-The AI will generate:
+- **Complete Mock APIs** - From endpoint definition to response bodies
+- **Multiple Rules** - Different scenarios (success, errors, edge cases)
+- **Realistic Data** - Sample user data, product catalogs, financial data, etc.
+- **Complex Structures** - Nested objects, arrays, and relationships
+- **Headers and Delays** - Simulate real-world API behavior
+- **RESTful Patterns** - Follow REST conventions automatically
+
+#### 7. **Example Generated Output**
+
+**Your AI assistant will generate:**
 
 ```yaml
 name: Get All Positions Info
@@ -244,21 +272,42 @@ rules:
     delay: 50
 ```
 
-#### 6. **Best Practices**
+**Then simply:**
+
+1. Save this as `.mock/get_positions.yaml`
+2. MockPilot automatically loads it
+3. Start testing at `http://localhost:9527/v1/positions`
+
+#### 8. **Best Practices**
 
 - **Be Specific**: Provide clear descriptions of expected responses
 - **Include Scenarios**: Mention different cases (success, errors, edge cases)
 - **Specify Data Types**: Indicate if you need numbers, dates, booleans, etc.
 - **Mention Constraints**: Include any validation rules or business logic
-- **Review Output**: Always review AI-generated configs before using in production
+- **Review Output**: Always review AI-generated configs before using
+- **Iterate**: Refine your prompt if the output needs adjustments
 
-### Benefits of AI Generation
+### Benefits of AI-Assisted Generation
 
 - ⚡ **Save Time**: Generate complex mock rules in seconds
+- 🎯 **Claude Skill Integration**: Auto-installed skill ensures optimal results with Claude
+- 🤝 **Use Your Preferred AI**: Works with Copilot, Cursor, Claude, or any AI assistant
 - 📚 **Best Practices**: AI follows YAML and REST conventions
 - 🎯 **Comprehensive**: Automatically includes multiple scenarios
-- 🔄 **Iterative**: Easily refine by providing more context
+- 🔄 **Iterative**: Easily refine by adjusting your prompt
 - 📖 **Learning Tool**: Learn proper mock API structure from examples
+- 🎨 **Flexibility**: Combine AI generation with manual editing as needed
+
+### MockPilot's Role
+
+MockPilot focuses on what it does best:
+
+- 📁 **Managing** your mock configurations
+- 🚀 **Serving** mock APIs with hot reload
+- 🎯 **Testing** APIs directly from VS Code
+- 📊 **Monitoring** server status and routes
+
+You bring the AI tool you're already comfortable with, and MockPilot handles the rest!
 
 ### Prerequisites
 
