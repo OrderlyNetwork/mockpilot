@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MockPilot — 本地 Mock 服务插件</title>
+  <title>MockPilot — Local Mock Service Extension</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -13,12 +13,12 @@
         <img src="./logo.svg" alt="MockPilot" class="logo" />
         <div class="brand-text">
           <h1>MockPilot</h1>
-          <p class="tag">为前后端协作打造的轻量级本地 Mock 服务 · VS Code 插件</p>
+          <p class="tag">A lightweight local mock service for frontend-backend collaboration · VS Code extension</p>
         </div>
       </div>
       <nav class="nav-cta">
-        <a class="btn primary" href="#install">安装 / 启动</a>
-        <a class="btn" href="#features">功能</a>
+        <a class="btn primary" href="#install">Install / Start</a>
+        <a class="btn" href="#features">Features</a>
       </nav>
     </div>
   </header>
@@ -27,23 +27,23 @@
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-content">
-          <h2>在 VS Code 中快速编写、管理与运行本地 Mock API</h2>
-          <p>基于项目根目录的 <code>.mock/</code> YAML 配置，自动注册路由并支持多响应 rule、热更新与可视化编辑。</p>
+          <h2>Rapidly write, manage & run local Mock APIs inside VS Code</h2>
+          <p>Based on project root <code>.mock/</code> YAML configs: automatically registers routes, supports multiple response rules, hot reload & visual editing.</p>
           <div class="hero-actions">
-            <a class="btn primary large" href="#install">立即开始</a>
-            <a class="btn ghost" href="#docs">查看文档</a>
+            <a class="btn primary large" href="#install">Get Started Now</a>
+            <a class="btn ghost" href="#docs">View Docs</a>
           </div>
         </div>
 
         <div class="hero-preview">
           <div class="card preview-card">
-            <div class="preview-header">YAML 示例</div>
+            <div class="preview-header">YAML Example</div>
             <pre class="code-block">name: Get User Info
-description: 获取用户基本信息
+description: Get basic user info
 method: GET
 endpoint: /api/user
 rules:
-  - name: 正常返回
+  - name: Normal Response
     status: 200
     headers:
       Content-Type: application/json
@@ -58,50 +58,50 @@ rules:
     </section>
 
     <section id="features" class="container features">
-      <h3>核心功能</h3>
+      <h3>Core Features</h3>
       <div class="features-grid">
         <div class="feature">
-          <h4>自动路由注册</h4>
-          <p>扫描 <code>.mock/</code> 下的 YAML 文件，自动生成本地路由，立即可用。</p>
+          <h4>Automatic Route Registration</h4>
+          <p>Scans YAML files under <code>.mock/</code>, auto-generating local routes ready to use.</p>
         </div>
         <div class="feature">
-          <h4>多响应规则</h4>
-          <p>为同一路由定义多个 rule（正常、出错、延迟等），在 UI 中一键切换。</p>
+          <h4>Multiple Response Rules</h4>
+          <p>Define multiple rules (normal, error, delay, etc.) for the same route; switch with one click in the UI.</p>
         </div>
         <div class="feature">
-          <h4>WebView 可视化编辑</h4>
-          <p>在 VS Code 的侧边栏打开编辑面板，所见即所得地维护 YAML 配置。</p>
+          <h4>WebView Visual Editing</h4>
+          <p>Open an editor panel in the VS Code sidebar to maintain YAML configs WYSIWYG.</p>
         </div>
         <div class="feature">
-          <h4>热更新与文件监听</h4>
-          <p>保存 YAML 即可触发 Mock Server 重载，快速迭代体验。</p>
+          <h4>Hot Reload & File Watching</h4>
+          <p>Saving a YAML file triggers Mock Server reload for fast iteration.</p>
         </div>
       </div>
     </section>
 
     <section id="install" class="container steps">
-      <h3>安装与使用</h3>
+      <h3>Installation & Usage</h3>
       <ol>
-        <li>在 VS Code 中打开项目根目录。</li>
-        <li>按 <code>Cmd+P</code> 输入 <code>Extensions: Install Extension</code>，搜索并安装本插件（或从源码加载）。</li>
-        <li>在侧边栏打开 <strong>MockPilot</strong> 面板，点击 <em>Start</em> 启动（默认端口 <code>9527</code>）。</li>
-        <li>将你的 YAML 文件放入项目根目录的 <code>.mock/</code>，并在浏览器或前端中使用 <code>http://localhost:9527</code> 发起请求。</li>
+        <li>Open the project root folder in VS Code.</li>
+        <li>Press <code>Cmd+P</code>, type <code>Extensions: Install Extension</code>, then search and install this extension (or load from source).</li>
+        <li>Open the <strong>MockPilot</strong> panel in the sidebar and click <em>Start</em> (default port <code>9527</code>).</li>
+        <li>Place your YAML files into the project root <code>.mock/</code> directory and make requests via <code>http://localhost:9527</code>.</li>
       </ol>
-      <p class="note">提示：可以在插件设置中修改端口、自动启动等参数。</p>
+      <p class="note">Tip: You can modify port, auto-start and other settings in the extension preferences.</p>
     </section>
 
     <section id="docs" class="container more">
-      <h3>更多</h3>
+      <h3>More</h3>
       <div class="more-grid">
         <div class="card">
-          <h4>快速开始</h4>
-          <p>包含模板 YAML、编辑界面与规则管理，适合日常前后端联调。</p>
-          <a class="btn" href="#">查看 README</a>
+          <h4>Quick Start</h4>
+          <p>Includes template YAML, editor UI & rule management—ideal for daily frontend-backend integration.</p>
+          <a class="btn" href="#">View README</a>
         </div>
         <div class="card">
           <h4>Roadmap</h4>
-          <p>后续计划：OpenAPI 导入、faker 支持、请求日志与条件匹配。</p>
-          <a class="btn" href="#">前往 PRD</a>
+          <p>Planned: OpenAPI import, faker support, request logging & conditional matching.</p>
+          <a class="btn" href="#">Go to PRD</a>
         </div>
       </div>
     </section>
@@ -109,7 +109,7 @@ rules:
 
   <footer class="site-footer">
     <div class="container">
-      <p>开源 · 贡献指南见仓库 <code>README.md</code></p>
+      <p>Open Source · Contribution guidelines in repository <code>README.md</code></p>
     </div>
   </footer>
 </body>
