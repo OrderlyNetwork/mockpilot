@@ -4,4 +4,4 @@ node_modules
 .vscode-test-web/
 *.vsix
 .env
-.docs/
+docs
