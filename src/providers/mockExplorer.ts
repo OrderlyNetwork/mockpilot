@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { MockApiConfig } from "../types";
+import { parseYamlConfig } from "../utils/yamlParser.js";
 
 export class MockFileTreeItem extends vscode.TreeItem {
   constructor(
@@ -163,8 +164,6 @@ export class MockExplorerProvider
           const fileContent = await vscode.workspace.fs.readFile(fileUri);
           const yamlText = new TextDecoder().decode(fileContent);
 
-          // Use shared YAML parsing service
-          const { parseYamlConfig } = await import("../utils/yamlParser.js");
           const config = await parseYamlConfig(yamlText, filename);
 
           const item = new MockFileTreeItem(

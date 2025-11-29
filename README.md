@@ -152,6 +152,7 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Roadmap
 
+[] Mock data programmatically
 [] Mock RPC Server
 
 ## 📄 License

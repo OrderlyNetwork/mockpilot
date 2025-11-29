@@ -18,6 +18,11 @@ export async function parseYamlConfig(
     // Parse YAML using the yaml library
     const parsed = yaml.parse(yamlText) as any;
 
+    // Check if parsed result is null or not an object (invalid YAML)
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Invalid YAML: parsed result is not a valid object');
+    }
+
     // Extract and validate the configuration
     const config: Partial<MockApiConfig> = {
       name: parsed.name || filename.replace(/\.(ya?ml)$/, ""),

@@ -3,7 +3,7 @@
   "displayName": "MockPilot",
   "description": "Visual Mock API Server for VS Code",
   "version": "0.0.1",
-  "publisher": "your-publisher-name",
+  "publisher": "OrderlyFE",
   "author": {
     "name": "Your Name"
   },
@@ -25,9 +25,11 @@
     "http",
     "rest"
   ],
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.75.0"
   },
+  "extensionKind": ["workspace", "web"],
   "categories": [
     "Testing",
     "Other"
@@ -171,11 +173,6 @@
       ],
       "view/item/context": [
         {
-          "command": "mock-server.openMockApi",
-          "when": "view == mockExplorer && viewItem == mockFile",
-          "group": "inline"
-        },
-        {
           "command": "mock-server.deleteMockApi",
           "when": "view == mockExplorer && viewItem == mockFile",
           "group": "inline"
@@ -203,6 +200,8 @@
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
     "pretest": "pnpm run compile-web",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "vscode:prepublish": "pnpm run package",
     "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
     "compile-web": "pnpm run check-types && pnpm run lint && node esbuild.js && vite build",
@@ -244,7 +243,8 @@
     "npm-run-all": "^4.1.5",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
-    "vite": "^7.2.2"
+    "vite": "^7.2.2",
+    "vitest": "^2.1.8"
   },
   "dependencies": {
     "@koa/cors": "^5.0.0",
