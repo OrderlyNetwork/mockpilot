@@ -10,12 +10,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/mock-vs-extension.git"
+    "url": "https://github.com/OrderlyNetwork/mockpilot.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/mock-vs-extension/issues"
+    "url": "https://github.com/OrderlyNetwork/mockpilot/issues"
   },
-  "homepage": "https://github.com/your-username/mock-vs-extension#readme",
+  "homepage": "https://github.com/OrderlyNetwork/mockpilot#readme",
   "keywords": [
     "mock",
     "api",
@@ -29,7 +29,10 @@
   "engines": {
     "vscode": "^1.75.0"
   },
-  "extensionKind": ["workspace", "web"],
+  "extensionKind": [
+    "workspace",
+    "web"
+  ],
   "categories": [
     "Testing",
     "Other"
@@ -249,6 +252,8 @@
   "dependencies": {
     "@koa/cors": "^5.0.0",
     "@koa/router": "^14.0.0",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "class-variance-authority": "^0.7.1",
