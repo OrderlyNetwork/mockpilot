@@ -2,7 +2,7 @@
   "name": "mockpilot",
   "displayName": "MockPilot",
   "description": "Visual Mock API Server for VS Code",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "OrderlyFE",
   "author": {
     "name": "Orderly FE"
